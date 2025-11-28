@@ -1,0 +1,37 @@
+graph TB
+    subgraph "Client Layer"
+        Mobile[Mobile App<br/>Flutter]
+        Admin[Admin Panel<br/>Web]
+    end
+    
+    subgraph "Application Layer - Railway"
+        Backend[Backend API<br/>Go/Golang<br/>Port: 8080]
+    end
+    
+    subgraph "Data Layer"
+        PostgreSQL[(PostgreSQL<br/>Neon Database)]
+        Redis[(Redis Cache<br/>RedisLabs)]
+    end
+    
+    subgraph "External Services"
+        GitHub[GitHub<br/>Version Control]
+        Railway[Railway<br/>Deployment Platform]
+    end
+    
+    Mobile -->|HTTPS/REST| Backend
+    Admin -->|HTTPS/REST| Backend
+    
+    Backend -->|SQL Queries| PostgreSQL
+    Backend -->|Cache Operations| Redis
+    
+    GitHub -->|Auto Deploy| Railway
+    Railway -->|Hosts| Backend
+    Railway -->|Hosts| Admin
+    
+    style Mobile fill:#4CAF50
+    style Admin fill:#2196F3
+    style Backend fill:#FF9800
+    style PostgreSQL fill:#336791
+    style Redis fill:#DC382D
+    style GitHub fill:#181717
+    style Railway fill:#0B0D0E

@@ -1,0 +1,58 @@
+graph TB
+    subgraph "Internet"
+        Users[End Users]
+    end
+    
+    subgraph "CDN/Load Balancer"
+        LB[Railway Load Balancer]
+    end
+    
+    subgraph "Application Servers"
+        API1[Backend Instance 1]
+        API2[Backend Instance 2]
+        Admin1[Admin Panel Instance]
+    end
+    
+    subgraph "Data Layer"
+        DB[(PostgreSQL<br/>Primary)]
+        DBR[(PostgreSQL<br/>Replica)]
+        Cache[(Redis Cache)]
+    end
+    
+    subgraph "External Services"
+        GitHub[GitHub]
+        Monitoring[Monitoring/Logs]
+    end
+    
+    Users -->|HTTPS| LB
+    LB --> API1
+    LB --> API2
+    LB --> Admin1
+    
+    API1 --> DB
+    API2 --> DB
+    Admin1 --> DB
+    
+    API1 --> Cache
+    API2 --> Cache
+    
+    DB -.->|Replication| DBR
+    
+    API1 -.->|Logs| Monitoring
+    API2 -.->|Logs| Monitoring
+    Admin1 -.->|Logs| Monitoring
+    
+    GitHub -.->|Deploy| API1
+    GitHub -.->|Deploy| API2
+    GitHub -.->|Deploy| Admin1
+    
+    style Users fill:#4CAF50
+    style LB fill:#FF9800
+    style API1 fill:#2196F3
+    style API2 fill:#2196F3
+    style Admin1 fill:#2196F3
+    style DB fill:#336791
+    style DBR fill:#336791
+    style Cache fill:#DC382D
+    style GitHub fill:#181717
+    style Monitoring fill:#FFC107

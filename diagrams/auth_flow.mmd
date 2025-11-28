@@ -1,0 +1,23 @@
+sequenceDiagram
+    participant User
+    participant Mobile/Admin
+    participant Backend
+    participant Database
+    participant Redis
+    
+    User->>Mobile/Admin: Enter Credentials
+    Mobile/Admin->>Backend: POST /api/auth/login
+    Backend->>Database: Verify Credentials
+    
+    alt Credentials Valid
+        Database-->>Backend: User Data
+        Backend->>Backend: Generate JWT Token
+        Backend->>Redis: Store Session
+        Backend-->>Mobile/Admin: Token + User Data
+        Mobile/Admin->>Mobile/Admin: Store Token Locally
+        Mobile/Admin-->>User: Login Success
+    else Credentials Invalid
+        Database-->>Backend: No Match
+        Backend-->>Mobile/Admin: Error (401)
+        Mobile/Admin-->>User: Login Failed
+    end

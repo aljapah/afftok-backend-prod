@@ -1,0 +1,48 @@
+graph TB
+    subgraph "Mobile App Components"
+        MA1[UI Layer]
+        MA2[Business Logic]
+        MA3[API Client]
+        MA4[Local Storage]
+    end
+    
+    subgraph "Admin Panel Components"
+        AP1[Dashboard]
+        AP2[User Management]
+        AP3[Content Management]
+        AP4[Analytics]
+    end
+    
+    subgraph "Backend Components"
+        BE1[API Gateway]
+        BE2[Authentication Service]
+        BE3[Business Logic Layer]
+        BE4[Data Access Layer]
+    end
+    
+    MA1 --> MA2
+    MA2 --> MA3
+    MA3 --> BE1
+    MA2 --> MA4
+    
+    AP1 --> BE1
+    AP2 --> BE1
+    AP3 --> BE1
+    AP4 --> BE1
+    
+    BE1 --> BE2
+    BE1 --> BE3
+    BE3 --> BE4
+    
+    style MA1 fill:#4CAF50
+    style MA2 fill:#4CAF50
+    style MA3 fill:#4CAF50
+    style MA4 fill:#4CAF50
+    style AP1 fill:#2196F3
+    style AP2 fill:#2196F3
+    style AP3 fill:#2196F3
+    style AP4 fill:#2196F3
+    style BE1 fill:#FF9800
+    style BE2 fill:#FF9800
+    style BE3 fill:#FF9800
+    style BE4 fill:#FF9800
