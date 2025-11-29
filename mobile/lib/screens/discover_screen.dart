@@ -15,6 +15,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String _selectedCategory = 'All';
   List<Offer> _allOffers = [];
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -23,20 +24,53 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   Future<void> _loadOffers() async {
-    setState(() => _isLoading = true);
-    
-    final offerService = OfferService();
-    final category = _selectedCategory == 'All' ? null : _selectedCategory;
-    final result = await offerService.getAllOffers(category: category);
-    
     setState(() {
-      if (result['success'] == true) {
-        _allOffers = result['offers'] as List<Offer>;
-      } else {
-        _allOffers = [];
-      }
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+    
+    try {
+      final offerService = OfferService();
+      final category = _selectedCategory == 'All' ? null : _selectedCategory;
+      final result = await offerService.getAllOffers(category: category);
+      
+      if (mounted) {
+        setState(() {
+          if (result['success'] == true) {
+            final offers = result['offers'];
+            
+            // فحص إذا كانت القائمة null أو ليست List
+            if (offers != null && offers is List<Offer>) {
+              _allOffers = offers;
+            } else if (offers is List) {
+              try {
+                _allOffers = List<Offer>.from(offers);
+              } catch (e) {
+                print('Error converting offers: $e');
+                _allOffers = [];
+                _errorMessage = 'Error loading offers';
+              }
+            } else {
+              _allOffers = [];
+              _errorMessage = 'Invalid offers data';
+            }
+          } else {
+            _allOffers = [];
+            _errorMessage = result['error'] as String? ?? 'Failed to load offers';
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _allOffers = [];
+          _errorMessage = 'Error: ${e.toString()}';
+          _isLoading = false;
+        });
+      }
+      print('Error loading offers: $e');
+    }
   }
 
   List<Offer> get _filteredOffers {
@@ -44,9 +78,21 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   Future<void> _launchUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could not launch $url');
+    try {
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not launch $url')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 
@@ -116,10 +162,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     label: Text(category['label'] as String),
                     selected: isSelected,
                     onSelected: (selected) {
-                      setState(() {
-                        _selectedCategory = category['key'] as String;
+                      if (selected) {
+                        setState(() {
+                          _selectedCategory = category['key'] as String;
+                        });
                         _loadOffers();
-                      });
+                      }
                     },
                     backgroundColor: Colors.grey[900],
                     selectedColor: const Color(0xFFFF006E).withOpacity(0.3),
@@ -138,6 +186,37 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           
           const SizedBox(height: 8),
           
+          if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      onPressed: () {
+                        setState(() => _errorMessage = null);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          
           Expanded(
             child: _filteredOffers.isEmpty
                 ? Center(
@@ -151,11 +230,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          lang.noOffersFound,
+                          'لا توجد عروض في هذه الفئة',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 16,
                           ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _loadOffers,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF006E),
+                          ),
+                          child: const Text('إعادة محاولة'),
                         ),
                       ],
                     ),
@@ -168,8 +255,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
-                    itemCount: _filteredOffers.isEmpty ? 0 : _filteredOffers.length,
+                    itemCount: _filteredOffers.length,
                     itemBuilder: (context, index) {
+                      if (index >= _filteredOffers.length) {
+                        return const SizedBox.shrink();
+                      }
+                      
                       final offer = _filteredOffers[index];
                       return GestureDetector(
                         onTap: () => _launchUrl(offer.offerUrl),
@@ -232,7 +323,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                           errorBuilder: (context, error, stackTrace) {
                                             return Center(
                                               child: Text(
-                                                offer.companyName[0],
+                                                offer.companyName.isNotEmpty
+                                                    ? offer.companyName[0]
+                                                    : '?',
                                                 style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold,
@@ -279,34 +372,22 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                   children: [
                                     Text(
                                       offer.companyName,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 14,
+                                        fontSize: 12,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       offer.reward,
                                       style: const TextStyle(
                                         color: Color(0xFFFF006E),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      offer.description,
-                                      style: TextStyle(
-                                        color: Colors.grey[400],
+                                        fontWeight: FontWeight.bold,
                                         fontSize: 11,
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),

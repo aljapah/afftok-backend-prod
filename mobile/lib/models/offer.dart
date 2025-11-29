@@ -66,13 +66,13 @@ class Offer {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'company_name': companyName,
+      'title': companyName,
       'logo_url': logoUrl,
-      'banner_url': imageUrl,
-      'reward': reward,
+      'image_url': imageUrl,
       'description': description,
       'category': category,
-      'registration_url': registrationUrl,
+      'destination_url': offerUrl,
+      'payout': reward,
       'rating': rating,
       'users_count': usersCount,
       'is_registered': isRegistered,

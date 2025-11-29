@@ -20,6 +20,10 @@ class FavoritesManager {
   // حفظ عرض في المفضلة
   Future<bool> saveOffer(Offer offer) async {
     try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      
       final savedOffers = await getSavedOffers();
       
       // تحقق إذا كان العرض موجود مسبقاً
@@ -43,7 +47,16 @@ class FavoritesManager {
   // حذف عرض من المفضلة
   Future<bool> removeOffer(String offerId) async {
     try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      
       final savedOffers = await getSavedOffers();
+      
+      if (savedOffers.isEmpty) {
+        return false;
+      }
+      
       savedOffers.removeWhere((o) => o.id == offerId);
       
       final List<String> offerJsonList = savedOffers
@@ -60,15 +73,28 @@ class FavoritesManager {
   // جلب جميع العروض المحفوظة
   Future<List<Offer>> getSavedOffers() async {
     try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      
       final List<String>? offerJsonList = _prefs!.getStringList(_key);
       
       if (offerJsonList == null || offerJsonList.isEmpty) {
         return [];
       }
       
-      return offerJsonList
-          .map((jsonStr) => Offer.fromJson(json.decode(jsonStr)))
-          .toList();
+      final List<Offer> offers = [];
+      for (var jsonStr in offerJsonList) {
+        try {
+          final offer = Offer.fromJson(json.decode(jsonStr));
+          offers.add(offer);
+        } catch (e) {
+          print('Error parsing offer: $e');
+          continue;
+        }
+      }
+      
+      return offers;
     } catch (e) {
       print('Error getting saved offers: $e');
       return [];
@@ -89,6 +115,10 @@ class FavoritesManager {
   // مسح جميع المفضلة
   Future<bool> clearAll() async {
     try {
+      if (_prefs == null) {
+        _prefs = await SharedPreferences.getInstance();
+      }
+      
       return await _prefs!.remove(_key);
     } catch (e) {
       print('Error clearing favorites: $e');
@@ -102,4 +132,3 @@ class FavoritesManager {
     return savedOffers.length;
   }
 }
-

@@ -7,9 +7,20 @@ class UserService {
   // Get user by ID
   Future<User?> getUserById(String userId) async {
     try {
+      if (userId.isEmpty) {
+        print('Error: userId is empty');
+        return null;
+      }
+      
       final response = await _apiService.get('/users/$userId');
+      
       if (response['success'] == true && response['data'] != null) {
-        return User.fromJson(response['data']);
+        try {
+          return User.fromJson(response['data']);
+        } catch (e) {
+          print('Error parsing user data: $e');
+          return null;
+        }
       }
       return null;
     } catch (e) {
@@ -21,6 +32,16 @@ class UserService {
   // Update user
   Future<bool> updateUser(String userId, Map<String, dynamic> data) async {
     try {
+      if (userId.isEmpty) {
+        print('Error: userId is empty');
+        return false;
+      }
+      
+      if (data.isEmpty) {
+        print('Error: data is empty');
+        return false;
+      }
+      
       final response = await _apiService.put('/users/$userId', data);
       return response['success'] == true;
     } catch (e) {
@@ -32,6 +53,11 @@ class UserService {
   // Get user stats
   Future<UserStats?> getUserStats(String userId) async {
     try {
+      if (userId.isEmpty) {
+        print('Error: userId is empty');
+        return null;
+      }
+      
       final user = await getUserById(userId);
       return user?.stats;
     } catch (e) {

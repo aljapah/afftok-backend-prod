@@ -69,20 +69,29 @@ class ApiService {
           'password': password,
           'full_name': fullName,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 201) {
         // Save tokens
-        await _saveTokens(
-          data['access_token'] as String,
-          data['refresh_token'] as String,
-        );
+        if (data['access_token'] != null && data['refresh_token'] != null) {
+          await _saveTokens(
+            data['access_token'] as String,
+            data['refresh_token'] as String,
+          );
+        }
         
         return {
           'success': true,
-          'user': User.fromJson(data['user']),
+          'user': data['user'] != null ? User.fromJson(data['user']) : null,
           'message': data['message'],
         };
       } else {
@@ -112,20 +121,29 @@ class ApiService {
           'username': username,
           'password': password,
         }),
-      );
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         // Save tokens
-        await _saveTokens(
-          data['access_token'] as String,
-          data['refresh_token'] as String,
-        );
+        if (data['access_token'] != null && data['refresh_token'] != null) {
+          await _saveTokens(
+            data['access_token'] as String,
+            data['refresh_token'] as String,
+          );
+        }
         
         return {
           'success': true,
-          'user': User.fromJson(data['user']),
+          'user': data['user'] != null ? User.fromJson(data['user']) : null,
           'message': data['message'],
         };
       } else {
@@ -148,14 +166,21 @@ class ApiService {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}${ApiConfig.getMe}'),
         headers: _getHeaders(includeAuth: true),
-      );
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
         return {
           'success': true,
-          'user': User.fromJson(data['user']),
+          'user': data['user'] != null ? User.fromJson(data['user']) : null,
         };
       } else {
         return {
@@ -177,7 +202,7 @@ class ApiService {
       await http.post(
         Uri.parse('${ApiConfig.baseUrl}${ApiConfig.logout}'),
         headers: _getHeaders(includeAuth: true),
-      );
+      ).timeout(const Duration(seconds: 30));
     } catch (e) {
       // Ignore errors on logout
     } finally {
@@ -191,7 +216,14 @@ class ApiService {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}$endpoint'),
         headers: _getHeaders(includeAuth: true),
-      );
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
 
       final data = jsonDecode(response.body);
 
@@ -221,7 +253,14 @@ class ApiService {
         Uri.parse('${ApiConfig.baseUrl}$endpoint'),
         headers: _getHeaders(includeAuth: true),
         body: jsonEncode(body),
-      );
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
 
       final data = jsonDecode(response.body);
 
@@ -250,7 +289,14 @@ class ApiService {
       final response = await http.delete(
         Uri.parse('${ApiConfig.baseUrl}$endpoint'),
         headers: _getHeaders(includeAuth: true),
-      );
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
 
       final data = jsonDecode(response.body);
 

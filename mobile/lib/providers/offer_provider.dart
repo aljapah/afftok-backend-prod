@@ -26,49 +26,107 @@ class OfferProvider with ChangeNotifier {
     _setLoading(true);
     _error = null;
 
-    final result = await _offerService.getAllOffers(
-      status: status,
-      category: category,
-      sort: sort,
-      order: order,
-    );
+    try {
+      final result = await _offerService.getAllOffers(
+        status: status,
+        category: category,
+        sort: sort,
+        order: order,
+      );
 
-    _setLoading(false);
+      _setLoading(false);
 
-    if (result['success'] == true) {
-      _offers = result['offers'] as List<Offer>;
+      if (result['success'] == true) {
+        final offers = result['offers'];
+        
+        // فحص إذا كانت القائمة null أو ليست List
+        if (offers != null && offers is List<Offer>) {
+          _offers = offers;
+        } else if (offers is List) {
+          try {
+            _offers = List<Offer>.from(offers);
+          } catch (e) {
+            print('Error converting offers: $e');
+            _offers = [];
+            _error = 'Error loading offers';
+          }
+        } else {
+          _offers = [];
+          _error = 'Invalid offers data';
+        }
+        notifyListeners();
+      } else {
+        _error = result['error'] as String? ?? 'Failed to load offers';
+        _offers = [];
+        notifyListeners();
+      }
+    } catch (e) {
+      _setLoading(false);
+      _error = 'Error: ${e.toString()}';
+      _offers = [];
       notifyListeners();
-    } else {
-      _error = result['error'] as String;
-      notifyListeners();
+      print('Error loading offers: $e');
     }
   }
 
   // Load my offers
   Future<void> loadMyOffers() async {
-    final result = await _offerService.getMyOffers();
+    try {
+      final result = await _offerService.getMyOffers();
 
-    if (result['success'] == true) {
-      _myOffers = result['offers'] as List<UserOffer>;
-      notifyListeners();
+      if (result['success'] == true) {
+        final offers = result['offers'];
+        
+        // فحص إذا كانت القائمة null أو ليست List
+        if (offers != null && offers is List<UserOffer>) {
+          _myOffers = offers;
+        } else if (offers is List) {
+          try {
+            _myOffers = List<UserOffer>.from(offers);
+          } catch (e) {
+            print('Error converting my offers: $e');
+            _myOffers = [];
+          }
+        } else {
+          _myOffers = [];
+        }
+        notifyListeners();
+      } else {
+        _myOffers = [];
+      }
+    } catch (e) {
+      _myOffers = [];
+      print('Error loading my offers: $e');
     }
   }
 
   // Join offer
   Future<Map<String, dynamic>> joinOffer(String offerId) async {
-    final result = await _offerService.joinOffer(offerId);
-    
-    if (result['success'] == true) {
-      // Reload my offers
-      await loadMyOffers();
+    try {
+      final result = await _offerService.joinOffer(offerId);
+      
+      if (result['success'] == true) {
+        // Reload my offers
+        await loadMyOffers();
+      }
+      
+      return result;
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error joining offer: ${e.toString()}',
+      };
     }
-    
-    return result;
   }
 
   // Check if user has joined offer
   bool hasJoinedOffer(String offerId) {
-    return _myOffers.any((uo) => uo.offerId == offerId);
+    try {
+      return _myOffers.any((uo) => uo.offerId == offerId);
+    } catch (e) {
+      print('Error checking if offer is joined: $e');
+      return false;
+    }
   }
 
   // Get user offer by offer ID
