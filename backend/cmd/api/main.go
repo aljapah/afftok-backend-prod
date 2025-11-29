@@ -55,7 +55,6 @@ func main() {
 	badgeHandler := handlers.NewBadgeHandler(db)
 	clickHandler := handlers.NewClickHandler(db)
 	promoterHandler := handlers.NewPromoterHandler(db)
-		googleAuthHandler := handlers.NewGoogleAuthHandler(db)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -72,8 +71,6 @@ func main() {
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/refresh", authHandler.RefreshToken)
 			auth.POST("/logout", authHandler.Logout)
-				auth.GET("/google/login", googleAuthHandler.BeginLogin)
-				auth.GET("/google/callback", googleAuthHandler.HandleCallback)
 		}
 
 		api.GET("/c/:id", clickHandler.TrackClick)
