@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/afftok/backend/pkg/utils"
+	"github.com/aljapah/afftok-backend-prod/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 

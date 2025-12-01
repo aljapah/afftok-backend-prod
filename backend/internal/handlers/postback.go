@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/afftok/backend/internal/models"
+	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"

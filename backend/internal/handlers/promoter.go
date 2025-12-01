@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 
-	"github.com/afftok/backend/internal/models"
+	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -33,6 +35,23 @@ func (h *PromoterHandler) GetPromoterPage(c *gin.Context) {
 		return
 	}
 
+	h.servePromoterPage(c, user)
+}
+
+func (h *PromoterHandler) GetPromoterPageByUsername(c *gin.Context) {
+	username := c.Param("username")
+
+	var user models.AfftokUser
+	if err := h.db.Where("username = ?", username).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	h.servePromoterPage(c, user)
+}
+
+func (h *PromoterHandler) servePromoterPage(c *gin.Context, user models.AfftokUser) {
+
 	var offers []models.Offer
 	if err := h.db.Where("status = ?", "active").Order("created_at DESC").Find(&offers).Error; err != nil {
 		offers = []models.Offer{}
@@ -43,11 +62,11 @@ func (h *PromoterHandler) GetPromoterPage(c *gin.Context) {
 
 	h.db.Model(&models.Click{}).
 		Joins("JOIN user_offers ON clicks.user_offer_id = user_offers.id").
-		Where("user_offers.user_id = ? AND user_offers.status = ?", id, "active").
+		Where("user_offers.user_id = ? AND user_offers.status = ?", user.ID, "active").
 		Count(&totalClicks)
 
 	h.db.Model(&models.UserOffer{}).
-		Where("user_id = ? AND status = ?", id, "active").
+		Where("user_id = ? AND status = ?", user.ID, "active").
 		Count(&totalOffers)
 
 	html := h.generateHTML(user, offers, int(totalOffers), int(totalClicks))
@@ -55,6 +74,13 @@ func (h *PromoterHandler) GetPromoterPage(c *gin.Context) {
 }
 
 func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.Offer, totalOffers int, totalClicks int) string {
+	filePath := "public/promoter_landing.html"
+	if _, err := os.Stat(filePath); err == nil {
+		data, err := ioutil.ReadFile(filePath)
+		if err == nil {
+			return string(data)
+		}
+	}
 
 	promoterID := user.ID.String()
 
@@ -89,7 +115,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 					</div>
 				<a href="/api/c/%s?promoter=%s" class="get-link-btn" target="_blank">
 					<span class="btn-icon">🔗</span>
-					<span class="btn-text" data-en="Get Link" data-ar="احصل على الرابط">Get Link</span>
+					<span class="btn-text">Get Link</span>
 				</a>
 				</div>
 			</div>
@@ -104,7 +130,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 	bioHTML := fmt.Sprintf(`
 		<div class="bio-section">
-			<p class="bio-text" data-en="Welcome to my page! I share the best offers and deals to help you save money and earn rewards. Check out my curated selection below!" data-ar="مرحباً بك في صفحتي! أشارك أفضل العروض والصفقات لمساعدتك على توفير المال وكسب المكافآت. تفقد مجموعتي المختارة أدناه!">%s</p>
+			<p class="bio-text">%s</p>
 		</div>
 	`, bioText)
 
@@ -122,11 +148,12 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 	return fmt.Sprintf(`
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>%s - AffTok Promoter</title>
+	<title>%s - AffTok</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<style>
 		* {
 			margin: 0;
@@ -134,239 +161,230 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			box-sizing: border-box;
 		}
 
+		:root {
+			--primary: #FF006E;
+			--secondary: #FF4D00;
+			--accent: #8E2DE2;
+			--dark-accent: #4A00E0;
+			--bg-dark: #0a0a0a;
+			--bg-card: #1a1a1a;
+			--bg-light: #242424;
+			--border-color: #333333;
+			--text-primary: #ffffff;
+			--text-secondary: #a8a8a8;
+		}
+
+		html {
+			scroll-behavior: smooth;
+		}
+
 		body {
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-			background: #000000;
-			color: #ffffff;
+			font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+			background: linear-gradient(135deg, var(--bg-dark) 0%%, #0f0f0f 100%%);
+			color: var(--text-primary);
+			line-height: 1.6;
 			min-height: 100vh;
-			display: flex;
-			flex-direction: column;
-			box-shadow: 0 0 0 8px #8E2DE2, 0 0 0 16px #4A00E0;
 		}
 
-		.top-bar {
-			background: #000000;
-			padding: 15px 20px;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			border-bottom: 1px solid #2d2d2d;
+		body.en {
+			direction: ltr;
 		}
 
-		.logo-container {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-		}
-
-		.logo {
-			width: 40px;
-			height: 40px;
-		}
-
-		.logo-text {
-			font-size: 24px;
-			font-weight: bold;
-			color: #FF0000;
-		}
-
-		.lang-toggle {
-			background: #1a1a1a;
-			border: 1px solid #2d2d2d;
-			color: #ffffff;
-			padding: 8px 16px;
-			border-radius: 20px;
-			cursor: pointer;
-			font-size: 14px;
-			font-weight: 600;
-			transition: all 0.3s ease;
-		}
-
-		.lang-toggle:hover {
-			background: linear-gradient(135deg, #8E2DE2 0%%, #4A00E0 100%%);
-			border-color: transparent;
-		}
-
-		.header {
-			background: linear-gradient(135deg, #8E2DE2 0%%, #4A00E0 100%%);
-			padding: 60px 20px 40px;
-			text-align: center;
-		}
-
-		.avatar {
-			width: 100px;
-			height: 100px;
-			border-radius: 50%%;
-			background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 48px;
-			margin: 0 auto 20px;
-			border: 4px solid rgba(255, 255, 255, 0.2);
-		}
-
-		.username {
-			font-size: 32px;
-			font-weight: bold;
-			margin-bottom: 10px;
-		}
-
-		.fullname {
-			font-size: 18px;
-			opacity: 0.9;
-			margin-bottom: 15px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 10px;
-		}
-
-		.rating-modal {
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%%;
-			height: 100%%;
-			background: rgba(0, 0, 0, 0.8);
-			display: none;
-			align-items: center;
-			justify-content: center;
-			z-index: 2000;
-		}
-
-		.rating-modal.show {
-			display: flex;
-		}
-
-		.rating-box {
-			background: linear-gradient(135deg, #8E2DE2 0%%, #4A00E0 100%%);
-			padding: 40px;
-			border-radius: 20px;
-			text-align: center;
-			box-shadow: 0 20px 60px rgba(142, 45, 226, 0.6);
-		}
-
-		.rating-box h3 {
-			margin-bottom: 30px;
-			font-size: 24px;
-		}
-
-		.rating-stars {
-			display: flex;
-			gap: 15px;
-			justify-content: center;
-			margin-bottom: 20px;
-		}
-
-		.rating-stars span {
-			font-size: 48px;
-			cursor: pointer;
-			color: #4A00E0;
-			transition: all 0.2s ease;
-		}
-
-		.rating-stars span:hover,
-		.rating-stars span.active {
-			color: #FFC700;
-			transform: scale(1.2);
-		}
-
-		.close-modal {
-			background: rgba(255, 255, 255, 0.2);
-			border: none;
-			color: white;
-			padding: 10px 30px;
-			border-radius: 10px;
-			cursor: pointer;
-			font-size: 16px;
-			font-weight: 600;
-		}
-
-		.rate-prompt {
-			font-size: 14px;
-			opacity: 0.8;
-			margin-bottom: 30px;
-			cursor: pointer;
-			text-decoration: underline;
-		}
-
-		.stats {
-			display: flex;
-			justify-content: center;
-			gap: 40px;
-			flex-wrap: wrap;
-		}
-
-		.stat-item {
-			text-align: center;
-		}
-
-		.stat-value {
-			font-size: 28px;
-			font-weight: bold;
-		}
-
-		.stat-label {
-			font-size: 14px;
-			opacity: 0.8;
-			margin-top: 5px;
+		body.en * {
+			direction: ltr;
 		}
 
 		.container {
 			max-width: 1200px;
 			margin: 0 auto;
-			padding: 40px 20px;
-			flex: 1;
+			padding: 0 20px;
 		}
 
-		.bio-section {
-			background: #1a1a1a;
-			border-radius: 16px;
-			padding: 30px;
-			margin-bottom: 40px;
-			border: 1px solid #2d2d2d;
+		header {
+			background: rgba(15, 15, 15, 0.8);
+			border-bottom: 1px solid var(--border-color);
+			padding: 12px 0;
+			position: sticky;
+			top: 0;
+			z-index: 100;
+			backdrop-filter: blur(10px);
 		}
 
-		.bio-section h2 {
+		.header-content {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.logo {
+			font-size: 32px;
+			font-weight: 700;
+			letter-spacing: -0.5px;
+			background: linear-gradient(135deg, var(--primary), var(--secondary));
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+			background-clip: text;
+			order: 2;
+		}
+
+		.language-toggle {
+			padding: 8px 16px;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
+			border-radius: 8px;
+			color: var(--text-primary);
+			cursor: pointer;
+			transition: all 0.3s ease;
+			font-weight: 600;
+			font-size: 13px;
+		}
+
+		.language-toggle:hover {
+			background: rgba(255, 0, 110, 0.1);
+			border-color: var(--primary);
+			color: var(--primary);
+		}
+
+		.profile-section {
+			text-align: center;
+			padding: 40px 0;
+			background: linear-gradient(180deg, rgba(255, 0, 110, 0.05) 0%%, transparent 100%%);
+			border-bottom: 1px solid var(--border-color);
+		}
+
+		.profile-image {
+			width: 80px;
+			height: 80px;
+			border-radius: 50%%;
+			margin: 0 auto 16px;
+			border: 3px solid var(--primary);
+			object-fit: cover;
+			box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);
+		}
+
+		.profile-name {
+			font-size: 28px;
+			font-weight: 700;
+			margin-bottom: 8px;
+			letter-spacing: -0.5px;
+		}
+
+		.profile-username {
+			color: var(--text-secondary);
+			font-size: 14px;
+			margin-bottom: 12px;
+		}
+
+		.profile-tagline {
+			color: var(--primary);
+			font-size: 14px;
+			font-weight: 600;
+			margin-bottom: 12px;
+		}
+
+		.member-badge {
+			display: inline-block;
+			padding: 6px 14px;
+			border: 2px solid var(--secondary);
+			border-radius: 20px;
+			color: var(--secondary);
+			font-size: 12px;
+			font-weight: 600;
+			margin-bottom: 16px;
+		}
+
+		.rating-section {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 8px;
+			margin-bottom: 20px;
+		}
+
+		.rating-stars {
+			color: #FFD700;
+			font-size: 18px;
+		}
+
+		.rating-value {
+			font-weight: 600;
+			color: var(--text-primary);
+		}
+
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 16px;
+			margin-top: 24px;
+		}
+
+		.stat-card {
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
+			border-radius: 12px;
+			padding: 16px;
+			text-align: center;
+		}
+
+		.stat-value {
 			font-size: 24px;
-			margin-bottom: 15px;
-			color: #ffffff;
+			font-weight: 700;
+			color: var(--primary);
 		}
 
-		.bio-section p {
-			font-size: 16px;
-			line-height: 1.6;
-			color: #cccccc;
+		.stat-label {
+			font-size: 12px;
+			color: var(--text-secondary);
+			margin-top: 8px;
+		}
+
+		.content-section {
+			padding: 40px 0;
 		}
 
 		.section-title {
-			font-size: 28px;
-			margin-bottom: 30px;
-			text-align: center;
+			font-size: 24px;
+			font-weight: 700;
+			margin-bottom: 24px;
+			color: var(--text-primary);
+		}
+
+		.bio-section {
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
+			border-radius: 12px;
+			padding: 24px;
+			margin-bottom: 40px;
+		}
+
+		.bio-text {
+			color: var(--text-secondary);
+			line-height: 1.8;
 		}
 
 		.offers-grid {
 			display: grid;
 			grid-template-columns: repeat(3, 1fr);
-			gap: 24px;
+			gap: 20px;
 		}
 
 		.offer-card {
-			background: #1a1a1a;
-			border-radius: 16px;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
+			border-radius: 12px;
 			overflow: hidden;
-			border: 1px solid #2d2d2d;
-			transition: transform 0.3s ease, box-shadow 0.3s ease;
+			transition: all 0.3s ease;
 		}
 
 		.offer-card:hover {
-			transform: translateY(-5px);
-			box-shadow: 0 10px 30px rgba(142, 45, 226, 0.3);
+			transform: translateY(-4px);
+			border-color: var(--primary);
+			box-shadow: 0 8px 24px rgba(255, 0, 110, 0.2);
 		}
 
 		.offer-image {
-			height: 180px;
+			width: 100%%;
+			height: 160px;
 			background-size: cover;
 			background-position: center;
 			position: relative;
@@ -376,151 +394,90 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			position: absolute;
 			top: 12px;
 			right: 12px;
+			background: rgba(0, 0, 0, 0.7);
+			color: var(--text-primary);
 			padding: 6px 12px;
 			border-radius: 20px;
-			font-size: 12px;
+			font-size: 11px;
 			font-weight: 600;
 			backdrop-filter: blur(10px);
 		}
 
-		.badge-finance { background: rgba(34, 197, 94, 0.9); }
-		.badge-ecommerce { background: rgba(59, 130, 246, 0.9); }
-		.badge-crypto { background: rgba(251, 146, 60, 0.9); }
-		.badge-travel { background: rgba(168, 85, 247, 0.9); }
-		.badge-default { background: rgba(107, 114, 128, 0.9); }
-
 		.offer-content {
-			padding: 20px;
+			padding: 16px;
 		}
 
 		.offer-title {
-			font-size: 18px;
+			font-size: 16px;
 			font-weight: 600;
-			margin-bottom: 10px;
+			margin-bottom: 8px;
+			color: var(--text-primary);
 			line-height: 1.3;
-			min-height: 48px;
-			display: flex;
-			align-items: center;
 		}
 
 		.offer-description {
-			font-size: 14px;
-			color: #999999;
-			margin-bottom: 15px;
-			line-height: 1.5;
+			font-size: 13px;
+			color: var(--text-secondary);
+			margin-bottom: 12px;
+			line-height: 1.4;
 			display: -webkit-box;
 			-webkit-line-clamp: 2;
 			-webkit-box-orient: vertical;
 			overflow: hidden;
 		}
 
-		.offer-meta {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 15px;
-		}
-
 		.offer-commission {
-			background: linear-gradient(135deg, #8E2DE2 0%%, #4A00E0 100%%);
-			padding: 6px 12px;
+			background: linear-gradient(135deg, var(--accent), var(--dark-accent));
+			color: var(--text-primary);
+			padding: 8px 12px;
 			border-radius: 8px;
-			font-size: 14px;
+			font-size: 12px;
 			font-weight: 600;
+			margin-bottom: 12px;
+			display: inline-block;
 		}
 
 		.get-link-btn {
 			width: 100%%;
-			padding: 12px;
-			background: linear-gradient(135deg, #8E2DE2 0%%, #4A00E0 100%%);
+			padding: 10px;
+			background: linear-gradient(135deg, var(--accent), var(--dark-accent));
+			color: var(--text-primary);
 			border: none;
-			border-radius: 10px;
-			color: white;
-			font-size: 16px;
+			border-radius: 8px;
+			font-size: 14px;
 			font-weight: 600;
 			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 8px;
-			transition: transform 0.2s ease;
+			transition: all 0.3s ease;
 			text-decoration: none;
+			display: inline-block;
+			text-align: center;
 		}
 
 		.get-link-btn:hover {
 			transform: scale(1.02);
+			box-shadow: 0 4px 12px rgba(142, 45, 226, 0.4);
 		}
 
-		.get-link-btn:active {
-			transform: scale(0.98);
-		}
-
-		.btn-icon {
-			font-size: 18px;
-		}
-
-		.toast {
-			position: fixed;
-			bottom: 30px;
-			left: 50%%;
-			transform: translateX(-50%%) translateY(100px);
-			background: linear-gradient(135deg, #8E2DE2 0%%, #4A00E0 100%%);
-			color: white;
-			padding: 16px 32px;
-			border-radius: 50px;
-			font-weight: 600;
-			box-shadow: 0 10px 40px rgba(142, 45, 226, 0.5);
-			transition: transform 0.3s ease;
-			z-index: 1000;
-		}
-
-		.toast.show {
-			transform: translateX(-50%%) translateY(0);
-		}
-
-		.footer {
-			background: #0a0a0a;
-			border-top: 1px solid #2d2d2d;
-			padding: 40px 20px;
-			margin-top: 60px;
-		}
-
-		.footer-content {
-			max-width: 1200px;
-			margin: 0 auto;
+		footer {
+			background: var(--bg-dark);
+			border-top: 1px solid var(--border-color);
+			padding: 40px 0;
 			text-align: center;
-		}
-
-		.footer-logo {
-			width: 60px;
-			height: 60px;
-			margin: 0 auto 20px;
-		}
-
-		.footer-title {
-			font-size: 24px;
-			font-weight: bold;
-			color: #FF0000;
-			margin-bottom: 20px;
-		}
-
-		.footer-text {
+			color: var(--text-secondary);
 			font-size: 14px;
-			color: #999999;
-			line-height: 1.6;
-		}
-
-		.copyright {
-			margin-top: 30px;
-			padding-top: 30px;
-			border-top: 1px solid #2d2d2d;
-			font-size: 12px;
-			color: #666666;
 		}
 
 		@media (max-width: 768px) {
 			.offers-grid {
 				grid-template-columns: repeat(2, 1fr);
+			}
+
+			.stats-grid {
+				grid-template-columns: repeat(2, 1fr);
+			}
+
+			.profile-name {
+				font-size: 24px;
 			}
 		}
 
@@ -528,161 +485,102 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			.offers-grid {
 				grid-template-columns: 1fr;
 			}
-			.username {
-				font-size: 24px;
+
+			.stats-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.profile-name {
+				font-size: 20px;
+			}
+
+			.section-title {
+				font-size: 20px;
 			}
 		}
 	</style>
 </head>
 <body>
-	<div class="top-bar">
-		<div class="logo-container">
-			<div class="logo-text">🎬</div>
-			<span class="logo-text">AffTok</span>
-		</div>
-		<button class="lang-toggle" id="lang-btn" onclick="toggleLanguage()">
-			<span id="lang-btn-text">العربية</span>
-		</button>
-	</div>
-
-	<div class="header">
-		<div class="avatar">%s</div>
-		<div class="username">%s</div>
-		<div class="fullname">
-			<span>%s</span>
-			<span>⭐ %.1f</span>
-		</div>
-		<div class="stats">
-			<div class="stat-item">
-				<div class="stat-value">%d</div>
-				<div class="stat-label" data-en="Offers" data-ar="العروض">Offers</div>
-			</div>
-			<div class="stat-item">
-				<div class="stat-value">%d</div>
-				<div class="stat-label" data-en="Clicks" data-ar="النقرات">Clicks</div>
+	<header>
+		<div class="container">
+			<div class="header-content">
+				<button class="language-toggle" onclick="toggleLanguage()">
+					<span id="lang-text">English</span>
+				</button>
+				<div class="logo">AffTok</div>
+				<div style="width: 100px;"></div>
 			</div>
 		</div>
-		<div class="rate-prompt" onclick="showRatingModal()" data-en="Rate this promoter" data-ar="قيّم هذا المروج">Rate this promoter</div>
+	</header>
+
+	<div class="profile-section">
+		<div class="container">
+			<div style="width: 80px; height: 80px; border-radius: 50%%; margin: 0 auto 16px; background: linear-gradient(135deg, var(--accent), var(--dark-accent)); display: flex; align-items: center; justify-content: center; font-size: 36px; border: 3px solid var(--primary);">%s</div>
+			<h1 class="profile-name">%s</h1>
+			<p class="profile-username">@%s</p>
+			<div class="rating-section">
+				<span class="rating-stars">★★★★★</span>
+				<span class="rating-value">%.1f</span>
+			</div>
+			<div class="stats-grid">
+				<div class="stat-card">
+					<div class="stat-value">%d</div>
+					<div class="stat-label">Offers</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">%d</div>
+					<div class="stat-label">Clicks</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-value">Gold</div>
+					<div class="stat-label">Member</div>
+				</div>
+			</div>
+		</div>
 	</div>
 
-	<div class="container">
-		%s
-		<div class="section-title" data-en="Available Offers" data-ar="العروض المتاحة">Available Offers</div>
-		<div class="offers-grid">
+	<div class="content-section">
+		<div class="container">
 			%s
-		</div>
-	</div>
-
-	<div class="footer">
-		<div class="footer-content">
-			<div class="footer-title">🎬 AffTok</div>
-			<p class="footer-text" data-en="The ultimate affiliate marketing platform" data-ar="منصة التسويق بالعمولة الشاملة">The ultimate affiliate marketing platform</p>
-			<div class="copyright en" style="display: block;">© 2024 AffTok. All rights reserved.</div>
-			<div class="copyright ar" style="display: none;">© 2024 AffTok. جميع الحقوق محفوظة.</div>
-		</div>
-	</div>
-
-	<div class="rating-modal" id="ratingModal">
-		<div class="rating-box">
-			<h3 data-en="Rate this promoter" data-ar="قيّم هذا المروج">Rate this promoter</h3>
-			<div class="rating-stars">
-				<span data-rating="1">⭐</span>
-				<span data-rating="2">⭐</span>
-				<span data-rating="3">⭐</span>
-				<span data-rating="4">⭐</span>
-				<span data-rating="5">⭐</span>
+			<h2 class="section-title">Available Offers</h2>
+			<div class="offers-grid">
+				%s
 			</div>
-			<button class="close-modal" onclick="closeRatingModal()" data-en="Close" data-ar="إغلاق">Close</button>
 		</div>
 	</div>
 
-	<div class="toast" id="toast"></div>
+	<footer>
+		<div class="container">
+			<p>© 2024 AffTok. All rights reserved.</p>
+		</div>
+	</footer>
 
 	<script>
-		let currentLang = 'en';
-		const promoterID = '%s';
+		let currentLang = 'ar';
 
 		function toggleLanguage() {
-			currentLang = currentLang === 'en' ? 'ar' : 'en';
+			currentLang = currentLang === 'ar' ? 'en' : 'ar';
 			const html = document.documentElement;
+			const body = document.body;
+			const langBtn = document.getElementById('lang-text');
 
 			if (currentLang === 'ar') {
 				html.setAttribute('lang', 'ar');
 				html.setAttribute('dir', 'rtl');
-				document.getElementById('lang-btn-text').textContent = 'English';
+				body.classList.remove('en');
+				langBtn.textContent = 'English';
 			} else {
 				html.setAttribute('lang', 'en');
 				html.setAttribute('dir', 'ltr');
-				document.getElementById('lang-btn-text').textContent = 'العربية';
+				body.classList.add('en');
+				langBtn.textContent = 'العربية';
 			}
-
-			document.querySelectorAll('[data-en][data-ar]').forEach(el => {
-				el.textContent = el.getAttribute('data-' + currentLang);
-			});
-
-			const copyrights = document.querySelectorAll('.copyright');
-			copyrights.forEach(cr => {
-				if (cr.classList.contains('ar')) {
-					cr.style.display = currentLang === 'ar' ? 'block' : 'none';
-				} else {
-					cr.style.display = currentLang === 'en' ? 'block' : 'none';
-				}
-			});
-		}
-
-		function showRatingModal() {
-			document.getElementById('ratingModal').classList.add('show');
-		}
-
-		function closeRatingModal() {
-			document.getElementById('ratingModal').classList.remove('show');
-		}
-
-		document.querySelectorAll('.rating-stars span').forEach(star => {
-			star.addEventListener('click', function() {
-				const rating = parseInt(this.getAttribute('data-rating'));
-				ratePromoter(rating);
-				closeRatingModal();
-			});
-			star.addEventListener('mouseenter', function() {
-				const rating = parseInt(this.getAttribute('data-rating'));
-				document.querySelectorAll('.rating-stars span').forEach((s, i) => {
-					if (i < rating) s.classList.add('active');
-					else s.classList.remove('active');
-				});
-			});
-		});
-
-		function ratePromoter(rating) {
-			fetch('/api/rate-promoter', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ promoter_id: promoterID, rating: rating })
-			})
-			.then(res => res.json())
-			.then(data => {
-				if (data.success) {
-					showToast(currentLang === 'ar' ? 'شكراً لتقييمك!' : 'Thank you for rating!');
-				}
-			})
-			.catch(err => {
-				console.error('Rating failed:', err);
-			});
-		}
-
-		function showToast(message) {
-			const toast = document.getElementById('toast');
-			toast.textContent = message || 'Link copied to clipboard! 🎉';
-			toast.classList.add('show');
-			setTimeout(() => {
-				toast.classList.remove('show');
-			}, 3000);
 		}
 	</script>
 </body>
 </html>
 		`, fullName, avatarLetter, user.Username,
-			promoterRating, totalOffers, totalClicks, bioHTML, offersHTML, promoterID)
+		promoterRating, totalOffers, totalClicks, bioHTML, offersHTML)
 }
 
 func getCategoryBadge(category string) string {

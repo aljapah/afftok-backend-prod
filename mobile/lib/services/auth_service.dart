@@ -34,8 +34,8 @@ class AuthService {
       if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('accessToken', data['access_token'] ?? '');
-        await prefs.setString('refreshToken', data['refresh_token'] ?? '');
+        await prefs.setString('access_token', data['access_token'] ?? '');
+        await prefs.setString('refresh_token', data['refresh_token'] ?? '');
         return data;
       } else {
         final errorData = jsonDecode(response.body);
@@ -62,8 +62,8 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('accessToken', data['access_token'] ?? '');
-        await prefs.setString('refreshToken', data['refresh_token'] ?? '');
+        await prefs.setString('access_token', data['access_token'] ?? '');
+        await prefs.setString('refresh_token', data['refresh_token'] ?? '');
         return data;
       } else {
         throw Exception('Login failed: ${response.statusCode}');
@@ -102,8 +102,8 @@ class AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('accessToken', data['access_token'] ?? '');
-        await prefs.setString('refreshToken', data['refresh_token'] ?? '');
+        await prefs.setString('access_token', data['access_token'] ?? '');
+        await prefs.setString('refresh_token', data['refresh_token'] ?? '');
         return data;
       } else {
         throw Exception('Google authentication failed: ${response.statusCode}');
@@ -118,8 +118,8 @@ class AuthService {
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('accessToken');
-      await prefs.remove('refreshToken');
+      await prefs.remove('access_token');
+      await prefs.remove('refresh_token');
       await _googleSignIn.signOut();
     } catch (e) {
       throw Exception('Logout error: $e');

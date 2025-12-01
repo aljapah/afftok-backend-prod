@@ -31,7 +31,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Watermark background
           Positioned.fill(
             child: Opacity(
               opacity: 0.05,
@@ -52,11 +51,9 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             ),
           ),
           
-          // Main content
           SafeArea(
             child: Column(
               children: [
-                // Custom AppBar
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -77,14 +74,12 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                   ),
                 ),
                 
-                // Scrollable content
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     children: [
                       const SizedBox(height: 10),
                       
-                      // Account Section
                       _SectionHeader(title: lang.account),
                       const _GradientDivider(),
                       const SizedBox(height: 12),
@@ -100,17 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                           );
                         },
                       ),
-                      _AnimatedSettingsTile(
-                        icon: Icons.lock_outline,
-                        title: lang.privacy,
-                        subtitle: lang.managePrivacy,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const PrivacyScreen()),
-                          );
-                        },
-                      ),
+                      
                       _AnimatedSettingsTile(
                         icon: Icons.security,
                         title: lang.security,
@@ -125,7 +110,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                       
                       const SizedBox(height: 24),
                       
-                      // Preferences Section
                       _SectionHeader(title: lang.preferences),
                       const _GradientDivider(),
                       const SizedBox(height: 12),
@@ -151,26 +135,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                       ),
                       
                       _AnimatedSettingsTile(
-                        icon: Icons.star_outline,
-                        title: lang.exclusiveOffers,
-                        subtitle: lang.exclusiveOffersSubtitle,
-                        trailing: Switch(
-                          value: _exclusiveOffersOnly,
-                          onChanged: (value) {
-                            setState(() {
-                              _exclusiveOffersOnly = value;
-                            });
-                          },
-                          activeColor: const Color(0xFFFF006E),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _exclusiveOffersOnly = !_exclusiveOffersOnly;
-                          });
-                        },
-                      ),
-                      
-                      _AnimatedSettingsTile(
                         icon: Icons.language,
                         title: lang.language,
                         subtitle: isArabic ? 'العربية' : 'English',
@@ -179,14 +143,13 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                       
                       _AnimatedSettingsTile(
                         icon: Icons.tune,
-                        title: lang.customizeFeed,
-                        subtitle: lang.customizeFeedSubtitle,
+                        title: lang.selectPreferredCategories,
+                        subtitle: '',
                         onTap: () => _showCustomizeFeedBottomSheet(context),
                       ),
                       
                       const SizedBox(height: 24),
                       
-                      // Support Section
                       _SectionHeader(title: lang.support),
                       const _GradientDivider(),
                       const SizedBox(height: 12),
@@ -215,8 +178,8 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                       ),
                       _AnimatedSettingsTile(
                         icon: Icons.info_outline,
-                        title: lang.aboutAffTokTitle,
-                        subtitle: lang.aboutAffTokSubtitle,
+                        title: lang.aboutScreenTitle,
+                        subtitle: lang.learnMoreAboutApp,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -305,19 +268,11 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                lang.customizeFeed,
-                style: const TextStyle(
+                lang.selectCategories,
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                lang.selectCategories,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 14,
                 ),
               ),
               const SizedBox(height: 24),
@@ -394,7 +349,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 children: [
                   Container(
@@ -408,7 +362,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                     ),
                     child: const Center(
                       child: Text(
-                        'R',
+                        'A',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 28,
@@ -420,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      lang.aboutTitle,
+                      lang.aboutScreenTitle,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -436,7 +390,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               ),
               const SizedBox(height: 24),
               
-              // Scrollable content
               Flexible(
                 child: SingleChildScrollView(
                   child: Text(
@@ -452,7 +405,6 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
               
               const SizedBox(height: 24),
               
-              // Close button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

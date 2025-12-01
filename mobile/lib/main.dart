@@ -30,7 +30,7 @@ class AffTokApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LanguageProvider()..setLocale(const Locale('ar', ''))),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => OfferProvider()),
       ],
       child: Consumer<LanguageProvider>(

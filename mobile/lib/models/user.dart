@@ -185,42 +185,5 @@ class OfferStats {
   });
 }
 
-// Sample current user data
-final currentUser = User(
-  id: 'user_001',
-  username: 'abomohammed',
-  displayName: 'Abo Mohammed',
-  email: 'abo@example.com',
-  phone: '+966501234567',
-  avatarUrl: null,
-  bio: 'Top affiliate marketer | Crypto enthusiast',
-  level: UserLevel.expert,
-  stats: UserStats(
-    totalClicks: 1250,
-    totalConversions: 45,
-    totalRegisteredOffers: 8,
-    monthlyClicks: 380,
-    monthlyConversions: 15,
-    globalRank: 42,
-    offerStats: {
-      'binance': OfferStats(
-        offerId: 'binance',
-        clicks: 450,
-        conversions: 25,
-      ),
-      'amazon': OfferStats(
-        offerId: 'amazon',
-        clicks: 280,
-        conversions: 12,
-      ),
-      'uber': OfferStats(
-        offerId: 'uber',
-        clicks: 180,
-        conversions: 8,
-      ),
-    },
-  ),
-  teamId: 'team_cryptokings',
-  createdAt: DateTime(2024, 6, 15),
-);
+
 

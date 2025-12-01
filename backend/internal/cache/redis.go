@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/afftok/backend/internal/config"
+	"github.com/aljapah/afftok-backend-prod/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 

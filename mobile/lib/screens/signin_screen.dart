@@ -3,6 +3,8 @@ import '../utils/app_localizations.dart';
 import 'signup_screen.dart';
 import 'home_feed_screen.dart';
 import '../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -37,6 +39,8 @@ class _SignInScreenState extends State<SignInScreen> {
           _passwordController.text.trim(),
         );
         if (mounted) {
+          // Load user data after successful login
+          await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
@@ -68,6 +72,8 @@ class _SignInScreenState extends State<SignInScreen> {
     try {
       await _authService.googleSignIn();
       if (mounted) {
+        // Load user data after successful Google sign-in
+        await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeFeedScreen()),

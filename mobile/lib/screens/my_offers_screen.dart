@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
 import '../models/offer.dart';
 import '../models/user_offer.dart';
 import '../models/user.dart';
 import '../utils/app_localizations.dart';
+import '../providers/auth_provider.dart';
 import 'offer_details_screen.dart';
 
 class MyOffersScreen extends StatelessWidget {
@@ -31,10 +33,28 @@ class MyOffersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
-    final userOffers = getUserOffers(currentUser.id);
-    final allOffers = Offer.getSampleOffers();
+    
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+        
+        if (user == null) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              title: Text(lang.myOffers),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        final userOffers = getUserOffers(user.id);
+        final allOffers = Offer.getSampleOffers();
 
-    return Scaffold(
+        return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -66,6 +86,8 @@ class MyOffersScreen extends StatelessWidget {
                 return _buildOfferCard(context, offer, userOffer, lang);
               },
             ),
+    );
+      }
     );
   }
 

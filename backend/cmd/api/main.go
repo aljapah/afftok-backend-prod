@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/afftok/backend/internal/cache"
-	"github.com/afftok/backend/internal/config"
-	"github.com/afftok/backend/internal/database"
-	"github.com/afftok/backend/internal/handlers"
-	"github.com/afftok/backend/internal/middleware"
+	"github.com/aljapah/afftok-backend-prod/internal/cache"
+	"github.com/aljapah/afftok-backend-prod/internal/config"
+	"github.com/aljapah/afftok-backend-prod/internal/database"
+	"github.com/aljapah/afftok-backend-prod/internal/handlers"
+	"github.com/aljapah/afftok-backend-prod/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -46,6 +46,8 @@ func main() {
 
 	router.Use(middleware.CORSMiddleware())
 
+	router.Static("/public", "./public")
+
 	authHandler := handlers.NewAuthHandler(db)
 	userHandler := handlers.NewUserHandler(db)
 	offerHandler := handlers.NewOfferHandler(db)
@@ -75,6 +77,7 @@ func main() {
 
 		api.GET("/c/:id", clickHandler.TrackClick)
 		api.GET("/promoter/:id", promoterHandler.GetPromoterPage)
+		api.GET("/promoter/user/:username", promoterHandler.GetPromoterPageByUsername)
 		api.POST("/rate-promoter", promoterHandler.RatePromoter)
 
 		api.POST("/postback", postbackHandler.HandlePostback)

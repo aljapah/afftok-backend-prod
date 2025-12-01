@@ -1,4 +1,4 @@
-module github.com/afftok/backend
+module github.com/aljapah/afftok-backend-prod
 
 go 1.23
 

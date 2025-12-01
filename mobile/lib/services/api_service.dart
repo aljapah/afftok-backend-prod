@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
@@ -17,6 +18,8 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
     _refreshToken = prefs.getString('refresh_token');
+    print('[ApiService] init() - accessToken: ${_accessToken?.substring(0, 20)}...');
+    print('[ApiService] init() - refreshToken: ${_refreshToken?.substring(0, 20)}...');
   }
 
   // Save tokens to storage
@@ -27,6 +30,7 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', accessToken);
     await prefs.setString('refresh_token', refreshToken);
+    print('[ApiService] Tokens saved successfully');
   }
 
   // Clear tokens
@@ -309,6 +313,51 @@ class ApiService {
         return {
           'success': false,
           'error': data['error'] ?? 'Delete failed',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Upload file
+  Future<Map<String, dynamic>> uploadFile(String endpoint, String filePath) async {
+    try {
+      final file = File(filePath);
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConfig.baseUrl}$endpoint'),
+      );
+
+      request.headers.addAll(_getHeaders(includeAuth: true));
+      request.files.add(
+        await http.MultipartFile.fromPath('avatar', file.path),
+      );
+
+      final response = await request.send().timeout(const Duration(seconds: 30));
+      final responseBody = await response.stream.bytesToString();
+
+      if (responseBody.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
+
+      final data = jsonDecode(responseBody);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': data,
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Upload failed',
         };
       }
     } catch (e) {

@@ -100,13 +100,11 @@ class OfferProvider with ChangeNotifier {
     }
   }
 
-  // Join offer
   Future<Map<String, dynamic>> joinOffer(String offerId) async {
     try {
       final result = await _offerService.joinOffer(offerId);
       
       if (result['success'] == true) {
-        // Reload my offers
         await loadMyOffers();
       }
       
@@ -117,6 +115,14 @@ class OfferProvider with ChangeNotifier {
         'error': 'Error joining offer: ${e.toString()}',
       };
     }
+  }
+  
+  Future<void> refreshMyOffers() async {
+    await loadMyOffers();
+  }
+  
+  void notifyOffersChanged() {
+    notifyListeners();
   }
 
   // Check if user has joined offer

@@ -13,16 +13,19 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  font_awesome_flutter: ^10.6.0
 
   cupertino_icons: ^1.0.2
   url_launcher: ^6.1.11
   share_plus: ^12.0.1
   provider: ^6.0.5
-  shared_preferences: ^2.2.2     # ✅ تم التحديث
+  shared_preferences: ^2.2.2
   video_player: ^2.7.0
   http: ^1.6.0
   qr_flutter: ^4.1.0
   google_sign_in: ^6.1.0
+  webview_flutter: ^4.0.0
+  image_picker: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +39,7 @@ flutter:
   assets:
     - assets/splash.mp4
     - assets/logo.png
+    - assets/html/
 
 flutter_icons:
   android: true

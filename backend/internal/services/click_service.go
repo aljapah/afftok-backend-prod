@@ -3,8 +3,8 @@ package services
 import (
 	"strings"
 
-	"github.com/afftok/backend/internal/database"
-	"github.com/afftok/backend/internal/models"
+	"github.com/aljapah/afftok-backend-prod/internal/database"
+	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

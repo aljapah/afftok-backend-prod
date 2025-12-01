@@ -2,78 +2,138 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:provider/provider.dart';
 import '../utils/app_localizations.dart';
 import '../models/user.dart';
+import '../models/user_offer.dart';
 import '../models/team.dart';
+import '../providers/auth_provider.dart';
+import '../models/offer.dart';
 import 'settings_screen.dart';
 import 'teams_screen.dart';
 import 'home_feed_screen.dart';
+import 'webview_screen.dart';
+import 'promoter_public_page.dart';
 
-class ProfileScreenEnhanced extends StatelessWidget {
+class WebViewPage extends StatelessWidget {
+  final String url;
+  final String title;
+
+  const WebViewPage({Key? key, required this.url, required this.title})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.black,
+      ),
+      body: WebViewScreen(url: url, title: title, offerId: ''),
+    );
+  }
+}
+
+class ProfileScreenEnhanced extends StatefulWidget {
   const ProfileScreenEnhanced({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreenEnhanced> createState() => _ProfileScreenEnhancedState();
+}
+
+class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.currentUser != null) {
+        return;
+      }
+      authProvider.loadCurrentUser();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
-    final user = currentUser; // Using sample data
     
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text(
-          lang.profile,
-          style: const TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            
-            // Profile Header
-            _buildProfileHeader(context, user, lang),
-            
-            const SizedBox(height: 24),
-            
-            // Personal Link Card
-            _buildPersonalLinkCard(context, user, lang),
-            
-            const SizedBox(height: 24),
-            
-            // Stats Cards
-            _buildStatsCards(context, user, lang),
-            
-            const SizedBox(height: 24),
-            
-            // Team Section (if in team)
-            if (user.isInTeam) ...[
-              _buildTeamSection(context, lang),
-              const SizedBox(height: 24),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+        
+        if (user == null) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              title: Text(lang.profile),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        return Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            title: Text(
+              lang.profile,
+              style: const TextStyle(color: Colors.white),
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+              ),
             ],
-            
-            // Active Offers
-            _buildActiveOffers(context, user, lang),
-            
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 24),
+                
+                // Profile Header
+                _buildProfileHeader(context, user, lang),
+                
+                const SizedBox(height: 24),
+                
+                // Personal Link Card
+                _buildPersonalLinkCard(context, user, lang),
+                
+                const SizedBox(height: 24),
+                
+                // Stats Cards
+                _buildStatsCards(context, user, lang),
+                
+                const SizedBox(height: 24),
+                
+                // Team Section (if in team)
+                if (user.isInTeam) ...[
+                  _buildTeamSection(context, lang),
+                  const SizedBox(height: 24),
+                ],
+                
+                // Active Offers
+                _buildActiveOffers(context, user, lang),
+                
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -112,16 +172,30 @@ class ProfileScreenEnhanced extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: Colors.black,
                       ),
-                      child: Container(
+                        child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.grey[800],
                         ),
-                        child: const Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.white,
-                        ),
+                        child: user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  user.avatarUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: Colors.white,
+                                    );
+                                  },
+                                ),
+                              )
+                            : const Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
                   ),
@@ -320,6 +394,21 @@ class ProfileScreenEnhanced extends StatelessWidget {
                     label: 'QR',
                     onTap: () {
                       _showQRCodeDialog(context, user, lang);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.public,
+                    label: lang.myPublicPage,
+                    onTap: () async {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PromoterPublicPage(username: user.username),
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -590,70 +679,146 @@ class ProfileScreenEnhanced extends StatelessWidget {
   }
 
   Widget _buildActiveOffers(BuildContext context, User user, AppLocalizations lang) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final userOffers = authProvider.userOffers;
+        final currentLang = lang;
+        
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                lang.myActiveOffers,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    currentLang.myActiveOffers,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '(${userOffers.length})',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                '(${user.stats.offerStats.length})',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 14,
+              const SizedBox(height: 16),
+              userOffers.isEmpty
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Center(
+                        child: Text(
+                          currentLang.noOffersAdded,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    )
+                  : GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 1.1,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                      itemCount: userOffers.length,
+                      itemBuilder: (context, index) {
+                        final userOffer = userOffers[index];
+                        return _buildUserOfferCard(userOffer);
+                      },
+                    ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: Text(
+                    currentLang.addMoreOffers,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.1,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+        );
+      },
+    );
+  }
+
+  Widget _buildUserOfferCard(UserOffer userOffer) {
+    final allOffers = Offer.getSampleOffers();
+    final offer = allOffers.firstWhere(
+      (o) => o.id == userOffer.offerId,
+      orElse: () => allOffers.first,
+    );
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            offer.companyName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
-            itemCount: user.stats.offerStats.length,
-            itemBuilder: (context, index) {
-              final entry = user.stats.offerStats.entries.elementAt(index);
-              return _buildOfferCard(entry.key, entry.value);
-            },
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
-                );
-              },
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: Text(
-                lang.addMoreOffers,
-                style: const TextStyle(color: Colors.white),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${userOffer.stats.conversions} conversions',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 12,
                 ),
               ),
-            ),
+              const SizedBox(height: 4),
+              Text(
+                '${userOffer.stats.clicks} clicks',
+                style: const TextStyle(
+                  color: Color(0xFF00FF88),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ],
       ),

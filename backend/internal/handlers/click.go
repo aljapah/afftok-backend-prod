@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/afftok/backend/internal/models"
-	"github.com/afftok/backend/internal/services"
+	"github.com/aljapah/afftok-backend-prod/internal/models"
+	"github.com/aljapah/afftok-backend-prod/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"

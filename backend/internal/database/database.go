@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/afftok/backend/internal/config"
-	"github.com/afftok/backend/internal/models"
+	"github.com/aljapah/afftok-backend-prod/internal/config"
+	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

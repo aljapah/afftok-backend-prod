@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:provider/provider.dart';
 import '../utils/app_localizations.dart';
 import '../models/team.dart';
 import '../models/user.dart';
+import '../providers/auth_provider.dart';
 
 class TeamsScreen extends StatefulWidget {
   const TeamsScreen({Key? key}) : super(key: key);
@@ -31,7 +33,23 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
-    final user = currentUser;
+    
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+        
+        if (user == null) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.black,
+              title: Text(lang.teams),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
     
     return Scaffold(
       backgroundColor: Colors.black,
@@ -73,11 +91,12 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
         ],
       ),
     );
+      }
+    );
   }
 
   Widget _buildMyTeamTab(BuildContext context, AppLocalizations lang) {
     final team = sampleTeam;
-    final user = currentUser;
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -92,7 +111,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
           
           const SizedBox(height: 24),
           
-          _buildTeamMembers(team, user, lang),
+          _buildTeamMembers(team, lang),
           
           const SizedBox(height: 24),
           
@@ -340,7 +359,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildTeamMembers(Team team, User currentUser, AppLocalizations lang) {
+  Widget _buildTeamMembers(Team team, AppLocalizations lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -372,7 +391,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
           separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final member = team.members[index];
-            final isCurrentUser = member.userId == currentUser.id;
+            final isCurrentUser = false; // TODO: pass from parent
             return _buildMemberCard(member, isCurrentUser, lang);
           },
         ),

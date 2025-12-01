@@ -1,236 +1,233 @@
 import 'package:flutter/material.dart';
-import '../models/user.dart';
-import '../models/user_offer.dart';
-import '../models/offer.dart';
+import 'package:provider/provider.dart';
 import '../utils/app_localizations.dart';
+import '../providers/auth_provider.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({Key? key}) : super(key: key);
 
   @override
-  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
+  State<AnalyticsScreenState> createState() => _AnalyticsScreenState();
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  String _selectedPeriod = 'all'; // all, month, week
+  String _selectedPeriod = 'all';
 
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
-    final userOffers = getUserOffers(currentUser.id);
-    final allOffers = Offer.getSampleOffers();
+    
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+        
+        if (user == null) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              title: Text(lang.analytics),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          lang.analytics,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        final totalClicks = authProvider.totalClicks;
+        final totalConversions = authProvider.totalConversions;
+        final conversionRate = authProvider.overallConversionRate;
+        final offersCount = authProvider.totalOffersAdded;
+
+        return Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(
+              lang.analytics,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildPeriodSelector(lang),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Overview',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildOverviewCard(
+                    icon: Icons.visibility,
+                    label: lang.visits,
+                    value: '$totalClicks',
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildOverviewCard(
+                    icon: Icons.people,
+                    label: lang.conversions,
+                    value: '$totalConversions',
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildOverviewCard(
+                    icon: Icons.trending_up,
+                    label: lang.conversionRate,
+                    value: '${conversionRate.toStringAsFixed(1)}%',
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildOverviewCard(
+                    icon: Icons.inventory_2,
+                    label: 'Active Offers',
+                    value: '$offersCount',
+                    color: Colors.purple,
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Offers Performance',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildOffersPerformance(authProvider, lang),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Monthly Performance',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStatRow(
+                    icon: Icons.visibility,
+                    label: lang.visits,
+                    value: '${user.stats.monthlyClicks}',
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildStatRow(
+                    icon: Icons.people,
+                    label: lang.conversions,
+                    value: '${user.stats.monthlyConversions}',
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildStatRow(
+                    icon: Icons.trending_up,
+                    label: 'Monthly Growth',
+                    value: '${user.stats.monthlyGrowth.toStringAsFixed(1)}%',
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOffersPerformance(AuthProvider authProvider, AppLocalizations lang) {
+    final userOffers = authProvider.userOffers;
+    
+    if (userOffers.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            lang.noOffersAdded,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+            ),
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Period selector
-              _buildPeriodSelector(lang),
-
-              const SizedBox(height: 24),
-
-              // Overview cards
-              Text(
-                lang.overview,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+      );
+    }
+    
+    return Column(
+      children: userOffers.map((offer) {
+        return Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
               ),
-              const SizedBox(height: 16),
-
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: _buildOverviewCard(
-                      icon: Icons.touch_app,
-                      label: lang.totalClicks,
-                      value: '${currentUser.stats.totalClicks}',
-                      color: Colors.blue,
-                      trend: '+12%',
+                  Text(
+                    'Offer ${offer.offerId}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildOverviewCard(
-                      icon: Icons.people,
-                      label: lang.totalConversions,
-                      value: '${currentUser.stats.totalReferrals}',
-                      color: Colors.green,
-                      trend: '+8%',
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildOverviewCard(
-                      icon: Icons.attach_money,
-                      label: lang.totalEarnings,
-                      value: '\$${currentUser.stats.totalRegisteredOffers.toStringAsFixed(0)}',
-                      color: Colors.amber,
-                      trend: '+15%',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildOverviewCard(
-                      icon: Icons.trending_up,
-                      label: lang.conversionRate,
-                      value: '${(currentUser.stats.totalConversions/ currentUser.stats.totalClicks * 100).toStringAsFixed(1)}%',
-                      color: Colors.purple,
-                      trend: '+3%',
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-              // Performance chart placeholder
-              Text(
-                lang.performanceChart,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[800]!),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(
-                        Icons.show_chart,
-                        size: 60,
-                        color: Colors.grey[700],
-                      ),
-                      const SizedBox(height: 12),
                       Text(
-                        lang.chartPlaceholder,
+                        'Clicks: ${offer.stats.clicks}',
                         style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        'Conversions: ${offer.stats.conversions}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Top performing offers
-              Text(
-                lang.topPerformingOffers,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              ...userOffers.take(5).map((userOffer) {
-                final offer = allOffers.firstWhere(
-                  (o) => o.id == userOffer.offerId,
-                  orElse: () => allOffers.first,
-                );
-                return _buildOfferPerformanceCard(offer, userOffer, lang);
-              }).toList(),
-
-              const SizedBox(height: 32),
-
-              // Additional stats
-              Text(
-                lang.additionalStats,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[800]!),
-                ),
-                child: Column(
-                  children: [
-                    _buildStatRow(
-                      icon: Icons.emoji_events,
-                      label: lang.globalRank,
-                      value: '#${currentUser.stats.globalRank}',
-                      color: Colors.amber,
+                  const SizedBox(height: 6),
+                  Text(
+                    'Rate: ${offer.conversionRate.toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      color: Color(0xFF00FF88),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const Divider(color: Colors.grey, height: 32),
-                    _buildStatRow(
-                      icon: Icons.inventory_2,
-                      label: lang.activeOffers,
-                      value: '${userOffers.length}',
-                      color: Colors.blue,
-                    ),
-                    const Divider(color: Colors.grey, height: 32),
-                    _buildStatRow(
-                      icon: Icons.calendar_month,
-                      label: lang.monthlyEarnings,
-                      value: '\$${currentUser.stats.monthlyConversions.toStringAsFixed(0)}',
-                      color: Colors.green,
-                    ),
-                    const Divider(color: Colors.grey, height: 32),
-                    _buildStatRow(
-                      icon: Icons.trending_up,
-                      label: lang.growthRate,
-                      value: '${currentUser.stats.conversionRate.toStringAsFixed(1)}%',
-                      color: Colors.purple,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 32),
-            ],
-          ),
-        ),
-      ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      }).toList(),
     );
   }
 
@@ -262,18 +259,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return GestureDetector(
       onTap: () => setState(() => _selectedPeriod = value),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF8E2DE2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[400],
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? Colors.black : Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -285,130 +281,39 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     required String label,
     required String value,
     required Color color,
-    required String trend,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, color: color, size: 24),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green[900]?.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  trend,
-                  style: TextStyle(
-                    color: Colors.green[400],
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOfferPerformanceCard(
-    Offer offer,
-    UserOffer userOffer,
-    AppLocalizations lang,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.all(6),
-            child: Image.network(
-              offer.logoUrl,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Text(
-                    offer.companyName[0],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 12),
+          Icon(icon, color: color, size: 32),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  offer.companyName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${userOffer.stats.clicks} ${lang.clicks} • ${userOffer.stats.conversions} ${lang.conversions}',
+                  label,
                   style: TextStyle(
                     color: Colors.grey[400],
                     fontSize: 12,
                   ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
-            ),
-          ),
-          Text(
-            '\$${userOffer.stats.earnings.toStringAsFixed(0)}',
-            style: const TextStyle(
-              color: Colors.amber,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -424,22 +329,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }) {
     return Row(
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[300],
-              fontSize: 15,
-            ),
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey[400],
+            fontSize: 12,
           ),
         ),
+        const Spacer(),
         Text(
           value,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -447,4 +351,3 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 }
-

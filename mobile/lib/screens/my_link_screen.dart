@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
 import '../models/user.dart';
 import '../utils/app_localizations.dart';
+import '../providers/auth_provider.dart';
 
 class MyLinkScreen extends StatelessWidget {
   const MyLinkScreen({Key? key}) : super(key: key);
@@ -28,10 +30,28 @@ class MyLinkScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
-    final personalLink = 'afftok.com/u/${currentUser.username}';
-    final fullLink = 'https://$personalLink';
+    
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+        
+        if (user == null) {
+          return Scaffold(
+            backgroundColor: Colors.black,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              title: Text(lang.myPersonalLink),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        final personalLink = 'afftok.com/u/${user.username}';
+        final fullLink = 'https://$personalLink';
 
-    return Scaffold(
+        return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -236,19 +256,19 @@ class MyLinkScreen extends StatelessWidget {
                         _buildStatItem(
                           icon: Icons.visibility,
                           label: lang.visits,
-                          value: '${currentUser.stats.totalClicks}',
+                          value: '${user.stats.totalClicks}',
                           color: Colors.blue,
                         ),
                         _buildStatItem(
                           icon: Icons.people,
                           label: lang.conversions,
-                          value: '${currentUser.stats.totalConversions}',
+                          value: '${user.stats.totalConversions}',
                           color: Colors.green,
                         ),
                         _buildStatItem(
                           icon: Icons.trending_up,
                           label: lang.conversionRate,
-                          value: '${(currentUser.stats.totalConversions/ currentUser.stats.totalClicks * 100).toStringAsFixed(1)}%',
+                          value: '${(user.stats.totalConversions/ user.stats.totalClicks * 100).toStringAsFixed(1)}%',
                           color: Colors.orange,
                         ),
                       ],
@@ -291,6 +311,8 @@ class MyLinkScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+      }
     );
   }
 

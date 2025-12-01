@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:afftok/utils/app_localizations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({Key? key}) : super(key: key);
 
+  void _launchURL(String url) async {
+    print('Attempting to launch URL: $url');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final lang = AppLocalizations.of(context);
+    final lang = AppLocalizations.of(context)!;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    
+    final contactTitle = isArabic ? 'للتواصل' : 'Contact Us';
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -56,7 +65,6 @@ class AboutScreen extends StatelessWidget {
             _buildText(lang.missionText),
 
             _buildSection(lang.whatMakesAffTokSpecial),
-            _buildFeature(Icons.touch_app, lang.tikTokStyleDiscovery, lang.tikTokStyleDiscoveryDesc),
             _buildFeature(Icons.attach_money, lang.realEarnings, lang.realEarningsDesc),
             _buildFeature(Icons.group, lang.teamPower, lang.teamPowerDesc),
             _buildFeature(Icons.trending_up, lang.transparentTracking, lang.transparentTrackingDesc),
@@ -69,19 +77,42 @@ class AboutScreen extends StatelessWidget {
             _buildStep('3', lang.earnStep, lang.earnStepDesc),
             _buildStep('4', lang.growStep, lang.growStepDesc),
 
-            _buildSection(lang.theNumbers),
-            _buildStat(context, lang.activeUsers, lang.activeUsersLabel),
-            _buildStat(context, lang.paidOut, lang.paidOutLabel),
-            _buildStat(context, lang.partnerCompanies, lang.partnerCompaniesLabel),
-            _buildStat(context, lang.countriesSupported, lang.countriesSupportedLabel),
-            _buildStat(context, lang.averageUserRating, lang.averageUserRatingLabel),
+            _buildSection(contactTitle),
+            
+            _buildContactLink(
+              icon: Icons.email_outlined,
+              title: 'support@afftokapp.com',
+              url: 'mailto:support@afftokapp.com',
+              onTap: () => _launchURL('mailto:support@afftokapp.com'),
+            ),
+            
+            _buildContactLink(
+              icon: FontAwesomeIcons.instagram,
+              title: 'Afftok_app',
+              url: 'https://instagram.com/Afftok_app',
+              onTap: () => _launchURL('https://instagram.com/Afftok_app'),
+            ),
 
-            _buildSection(lang.contactUs),
-            _buildBullet(lang.emailHello),
-            _buildBullet(lang.emailSupport),
-            _buildBullet(lang.website),
-            _buildBullet(lang.instagram),
-            _buildBullet(lang.twitter),
+            _buildContactLink(
+              icon: FontAwesomeIcons.xTwitter,
+              title: 'afftokapp',
+              url: 'https://twitter.com/afftokapp',
+              onTap: () => _launchURL('https://twitter.com/afftokapp'),
+            ),
+
+            _buildContactLink(
+              icon: FontAwesomeIcons.tiktok,
+              title: 'afftok_app',
+              url: 'https://tiktok.com/@afftok_app',
+              onTap: () => _launchURL('https://tiktok.com/@afftok_app'),
+            ),
+            
+            _buildContactLink(
+              icon: FontAwesomeIcons.youtube,
+              title: 'afftok',
+              url: 'https://youtube.com/@afftok',
+              onTap: () => _launchURL('https://youtube.com/@afftok'),
+            ),
 
             const SizedBox(height: 30),
             Center(
@@ -105,6 +136,37 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactLink({
+    required IconData icon,
+    required String title,
+    required String url,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: const Color(0xFFE91E63),
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+              ),
+            ),
           ],
         ),
       ),
@@ -148,7 +210,7 @@ class AboutScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFFE91E63).withValues(alpha: 0.2),
+              color: const Color(0xFFE91E63).withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: const Color(0xFFE91E63), size: 24),
@@ -232,97 +294,6 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStat(BuildContext context, String value, String label) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: isArabic
-            ? [
-                Expanded(
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  value,
-                  textAlign: TextAlign.left,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFE91E63),
-                  ),
-                ),
-              ]
-            : [
-                Expanded(
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.left,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  value,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFE91E63),
-                  ),
-                ),
-              ],
-      ),
-    );
-  }
-
-  Widget _buildBullet(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '• ',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFFE91E63),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-                height: 1.5,
-              ),
             ),
           ),
         ],

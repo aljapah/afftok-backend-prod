@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import '../utils/app_localizations.dart';
-import 'home_feed_screen.dart';
 import 'signin_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -97,7 +96,6 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Centered Video Player
           if (_isVideoInitialized && !_hasError)
             Center(
               child: AspectRatio(
@@ -106,85 +104,9 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             )
           else
-            // Fallback while loading or if error
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF8E2DE2),
-                    Color(0xFFFF006E),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'R',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 60,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Text(
-                      localizations.appName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      localizations.tagline,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 20,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    if (!_hasError)
-                      const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
-                    else
-                      const Text(
-                        'Loading...',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+              color: Colors.black,
             ),
-
-          // Skip button
           if (_isVideoInitialized && !_hasError)
             Positioned(
               top: 50,
