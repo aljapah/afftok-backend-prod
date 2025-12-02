@@ -77,7 +77,6 @@ func main() {
 
 		api.GET("/c/:id", clickHandler.TrackClick)
 		api.GET("/promoter/:id", promoterHandler.GetPromoterPage)
-		api.GET("/promoter/user/:username", promoterHandler.GetPromoterPageByUsername)
 		api.POST("/rate-promoter", promoterHandler.RatePromoter)
 
 		api.POST("/postback", postbackHandler.HandlePostback)
@@ -89,6 +88,7 @@ func main() {
 		protected.Use(middleware.AuthMiddleware())
 		{
 			protected.GET("/auth/me", authHandler.GetMe)
+			protected.GET("/promoter/user/:username", promoterHandler.GetPromoterPageByUsername)
 			protected.PUT("/profile", userHandler.UpdateProfile)
 
 			protected.GET("/users", userHandler.GetAllUsers)
