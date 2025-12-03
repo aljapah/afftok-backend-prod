@@ -336,17 +336,9 @@ func main() {
 				admin.DELETE("/contests/:id", contestHandler.AdminDeleteContest)
 				admin.GET("/contests/:id/participants", contestHandler.AdminGetContestParticipants)
 
-			admin.POST("/badges", badgeHandler.CreateBadge)
+				admin.POST("/badges", badgeHandler.CreateBadge)
 			admin.PUT("/badges/:id", badgeHandler.UpdateBadge)
 			admin.DELETE("/badges/:id", badgeHandler.DeleteBadge)
-
-			// Contests / Challenges Management
-			admin.GET("/contests", contestHandler.AdminGetAllContests)
-			admin.POST("/contests", contestHandler.AdminCreateContest)
-			admin.GET("/contests/:id", contestHandler.GetContest)
-			admin.PUT("/contests/:id", contestHandler.AdminUpdateContest)
-			admin.DELETE("/contests/:id", contestHandler.AdminDeleteContest)
-			admin.GET("/contests/:id/participants", contestHandler.AdminGetContestParticipants)
 
 			// ============================================
 			// PHASE 7: SYSTEM OBSERVABILITY API LAYER
