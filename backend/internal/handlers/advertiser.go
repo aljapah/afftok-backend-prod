@@ -85,7 +85,7 @@ func (h *AdvertiserHandler) RegisterAdvertiser(c *gin.Context) {
 	}
 
 	// Generate JWT token
-	token, err := utils.GenerateToken(user.ID.String())
+	token, err := utils.GenerateToken(user.ID, user.Username, user.Email, user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
