@@ -324,6 +324,111 @@ func (h *OfferHandler) JoinOffer(c *gin.Context) {
     })
 }
 
+// GetPendingOffers returns all pending offers for admin review
+// GET /api/admin/offers/pending
+func (h *OfferHandler) GetPendingOffers(c *gin.Context) {
+    var offers []models.Offer
+    if err := h.db.Preload("Advertiser").Where("status = ?", "pending").Order("created_at DESC").Find(&offers).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pending offers"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "offers": offers,
+        "total":  len(offers),
+    })
+}
+
+// ApproveOffer approves a pending offer
+// POST /api/admin/offers/:id/approve
+func (h *OfferHandler) ApproveOffer(c *gin.Context) {
+    offerID := c.Param("id")
+
+    id, err := uuid.Parse(offerID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offer ID"})
+        return
+    }
+
+    var offer models.Offer
+    if err := h.db.First(&offer, "id = ?", id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found"})
+        return
+    }
+
+    if offer.Status != "pending" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Offer is not pending"})
+        return
+    }
+
+    // Update status to active
+    if err := h.db.Model(&offer).Updates(map[string]interface{}{
+        "status":           "active",
+        "rejection_reason": "",
+    }).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to approve offer"})
+        return
+    }
+
+    // Reload offer
+    h.db.First(&offer, id)
+
+    c.JSON(http.StatusOK, gin.H{
+        "message": "Offer approved successfully",
+        "offer":   offer,
+    })
+}
+
+// RejectOffer rejects a pending offer with a reason
+// POST /api/admin/offers/:id/reject
+func (h *OfferHandler) RejectOffer(c *gin.Context) {
+    offerID := c.Param("id")
+
+    id, err := uuid.Parse(offerID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offer ID"})
+        return
+    }
+
+    type RejectRequest struct {
+        Reason string `json:"reason" binding:"required"`
+    }
+
+    var req RejectRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Rejection reason is required"})
+        return
+    }
+
+    var offer models.Offer
+    if err := h.db.First(&offer, "id = ?", id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Offer not found"})
+        return
+    }
+
+    if offer.Status != "pending" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Offer is not pending"})
+        return
+    }
+
+    // Update status to rejected
+    if err := h.db.Model(&offer).Updates(map[string]interface{}{
+        "status":           "rejected",
+        "rejection_reason": req.Reason,
+    }).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reject offer"})
+        return
+    }
+
+    // Reload offer
+    h.db.First(&offer, id)
+
+    c.JSON(http.StatusOK, gin.H{
+        "message": "Offer rejected successfully",
+        "offer":   offer,
+    })
+}
+
 func (h *OfferHandler) GetMyOffers(c *gin.Context) {
     userID, _ := c.Get("userID")
 

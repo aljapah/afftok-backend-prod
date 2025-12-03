@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../utils/app_localizations.dart';
 import '../models/team.dart';
+import '../models/contest.dart';
 import '../providers/auth_provider.dart';
 import '../providers/team_provider.dart';
+import '../services/team_service.dart';
+import '../services/contest_service.dart';
+import '../services/api_service.dart';
 
 class TeamsScreen extends StatefulWidget {
   const TeamsScreen({Key? key}) : super(key: key);
@@ -16,16 +21,41 @@ class TeamsScreen extends StatefulWidget {
 
 class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late ContestService _contestService;
+  List<Contest> _activeContests = [];
+  bool _loadingContests = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     
     // Load teams when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TeamProvider>(context, listen: false).loadTeams();
+      _loadContests();
     });
+  }
+
+  Future<void> _loadContests() async {
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    _contestService = ContestService(apiService);
+    
+    setState(() => _loadingContests = true);
+    
+    try {
+      final contests = await _contestService.getActiveContests();
+      if (mounted) {
+        setState(() {
+          _activeContests = contests;
+          _loadingContests = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingContests = false);
+      }
+    }
   }
 
   @override
@@ -66,6 +96,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
               tabs: [
                 Tab(text: lang.myTeam),
                 Tab(text: lang.leaderboard),
+                Tab(text: lang.challenges),
               ],
             ),
           ),
@@ -74,6 +105,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
             children: [
               _buildMyTeamTab(context, lang, teamProvider),
               _buildLeaderboardTab(context, lang, teamProvider),
+              _buildContestsTab(context, lang),
             ],
           ),
         );
@@ -558,41 +590,443 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
 
   Widget _buildTeamActions(BuildContext context, AppLocalizations lang, TeamProvider teamProvider, Team team) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isOwner = authProvider.currentUser != null && team.isOwner(authProvider.currentUser!.id);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Invite Button
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF006E), Color(0xFFFF4D00)],
+        // Invite Section with QR Code
+        _buildInviteSection(context, team, isArabic),
+        
+        const SizedBox(height: 24),
+        
+        // Pending Members (Owner Only)
+        if (isOwner && team.pendingMembers.isNotEmpty) ...[
+          _buildPendingMembersSection(context, team, teamProvider, isArabic),
+          const SizedBox(height: 24),
+        ],
+        
+        // Actions
+        Row(
+          children: [
+            // Share Button
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF006E), Color(0xFFFF4D00)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () => _shareTeamInvite(team),
+                  icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                  label: Text(isArabic ? 'مشاركة' : 'Share'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
             ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ElevatedButton.icon(
-            onPressed: () => _shareTeamInvite(team),
-            icon: const Icon(Icons.share, color: Colors.white),
-            label: Text(lang.inviteMembers),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+            const SizedBox(width: 12),
+            // QR Button
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: IconButton(
+                onPressed: () => _showQRCodeDialog(context, team, isArabic),
+                icon: const Icon(Icons.qr_code, color: Colors.white),
+                tooltip: isArabic ? 'رمز QR' : 'QR Code',
+              ),
             ),
-          ),
+          ],
         ),
         
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         
-        // Leave Team Button
-        TextButton(
-          onPressed: () => _confirmLeaveTeam(context, lang, teamProvider),
-          child: Text(
-            lang.leaveTeam,
-            style: const TextStyle(color: Colors.red),
+        // Leave Team Button (or Delete for owner)
+        if (isOwner)
+          TextButton.icon(
+            onPressed: () => _confirmDeleteTeam(context, lang, teamProvider, team),
+            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+            label: Text(
+              isArabic ? 'حذف الفريق' : 'Delete Team',
+              style: const TextStyle(color: Colors.red),
+            ),
+          )
+        else
+          TextButton.icon(
+            onPressed: () => _confirmLeaveTeam(context, lang, teamProvider),
+            icon: const Icon(Icons.exit_to_app, color: Colors.red, size: 20),
+            label: Text(
+              lang.leaveTeam,
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
-        ),
       ],
+    );
+  }
+  
+  Widget _buildInviteSection(BuildContext context, Team team, bool isArabic) {
+    final inviteUrl = team.inviteUrl ?? 'https://afftok.com/join/${team.inviteCode ?? team.id}';
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.link, color: Color(0xFFFF006E), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                isArabic ? 'رابط الدعوة' : 'Invite Link',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    inviteUrl,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 13,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: inviteUrl));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(isArabic ? 'تم نسخ الرابط ✓' : 'Link copied ✓'),
+                        backgroundColor: const Color(0xFFFF006E),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF006E),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      isArabic ? 'نسخ' : 'Copy',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (team.inviteCode != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${isArabic ? "كود الدعوة:" : "Invite Code:"} ${team.inviteCode}',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildPendingMembersSection(BuildContext context, Team team, TeamProvider teamProvider, bool isArabic) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.pending_actions, color: Colors.orange, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                isArabic ? 'طلبات الانضمام (${team.pendingMembers.length})' : 'Join Requests (${team.pendingMembers.length})',
+                style: const TextStyle(
+                  color: Colors.orange,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...team.pendingMembers.map((member) => _buildPendingMemberTile(context, team, member, teamProvider, isArabic)),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildPendingMemberTile(BuildContext context, Team team, TeamMember member, TeamProvider teamProvider, bool isArabic) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.white.withOpacity(0.1),
+            backgroundImage: member.avatarUrl != null && member.avatarUrl!.isNotEmpty
+                ? NetworkImage(member.avatarUrl!)
+                : null,
+            child: member.avatarUrl == null || member.avatarUrl!.isEmpty
+                ? Text(
+                    member.username.isNotEmpty ? member.username[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Colors.white),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  member.displayName.isNotEmpty ? member.displayName : member.username,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '@${member.username}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Approve Button
+          IconButton(
+            onPressed: () => _approveMember(context, team, member, teamProvider, isArabic),
+            icon: const Icon(Icons.check_circle, color: Colors.green),
+            tooltip: isArabic ? 'قبول' : 'Approve',
+          ),
+          // Reject Button
+          IconButton(
+            onPressed: () => _rejectMember(context, team, member, teamProvider, isArabic),
+            icon: const Icon(Icons.cancel, color: Colors.red),
+            tooltip: isArabic ? 'رفض' : 'Reject',
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showQRCodeDialog(BuildContext context, Team team, bool isArabic) {
+    final inviteUrl = team.inviteUrl ?? 'https://afftok.com/join/${team.inviteCode ?? team.id}';
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1a1a1a),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isArabic ? 'رمز QR للدعوة' : 'Invite QR Code',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                team.name,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: QrImageView(
+                  data: inviteUrl,
+                  version: QrVersions.auto,
+                  size: 200,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isArabic ? 'امسح الرمز للانضمام للفريق' : 'Scan to join the team',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  isArabic ? 'إغلاق' : 'Close',
+                  style: const TextStyle(color: Color(0xFFFF006E)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _approveMember(BuildContext context, Team team, TeamMember member, TeamProvider teamProvider, bool isArabic) async {
+    final teamService = TeamService();
+    final result = await teamService.approveMember(team.id, member.id);
+    
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isArabic ? 'تمت الموافقة على ${member.username}' : '${member.username} approved'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      teamProvider.loadTeams();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['error'] ?? 'Error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+  
+  Future<void> _rejectMember(BuildContext context, Team team, TeamMember member, TeamProvider teamProvider, bool isArabic) async {
+    final teamService = TeamService();
+    final result = await teamService.rejectMember(team.id, member.id);
+    
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isArabic ? 'تم رفض ${member.username}' : '${member.username} rejected'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      teamProvider.loadTeams();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['error'] ?? 'Error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+  
+  void _confirmDeleteTeam(BuildContext context, AppLocalizations lang, TeamProvider teamProvider, Team team) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1a1a),
+        title: Text(
+          isArabic ? 'حذف الفريق' : 'Delete Team',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          isArabic 
+              ? 'هل أنت متأكد من حذف الفريق "${team.name}"؟ سيتم إزالة جميع الأعضاء.'
+              : 'Are you sure you want to delete "${team.name}"? All members will be removed.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(lang.cancel, style: const TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              
+              final teamService = TeamService();
+              final result = await teamService.deleteTeam(team.id);
+              
+              if (result['success'] == true) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text(isArabic ? 'تم حذف الفريق' : 'Team deleted'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                teamProvider.loadTeams();
+              } else {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text(result['error'] ?? 'Error'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(isArabic ? 'حذف' : 'Delete'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -717,7 +1151,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
             ),
           ),
           
-          // Join Button
+          // Join Button or "In Team" indicator
           if (teamProvider.userTeam == null)
             ElevatedButton(
               onPressed: team.isFull
@@ -829,9 +1263,11 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
 
   void _confirmJoinTeam(BuildContext context, AppLocalizations lang, TeamProvider teamProvider, Team team) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: Text(
           lang.joinTeam,
@@ -843,17 +1279,17 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(lang.cancel, style: const TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               
               final success = await teamProvider.joinTeam(team.id);
               
               if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text(lang.joinedTeamSuccessfully),
                     backgroundColor: Colors.green,
@@ -861,7 +1297,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
                 );
                 _tabController.animateTo(0);
               } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text(teamProvider.error ?? lang.failedToJoinTeam),
                     backgroundColor: Colors.red,
@@ -930,9 +1366,411 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
 
   void _shareTeamInvite(Team team) {
-    final inviteLink = 'https://afftok.com/team/${team.id}';
-    Share.share(
-      'Join my team "${team.name}" on AffTok!\n\n$inviteLink',
+    final inviteLink = team.inviteUrl ?? 'https://afftok.com/join/${team.inviteCode ?? team.id}';
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    
+    final message = isArabic
+        ? 'انضم لفريقي "${team.name}" على AffTok!\n\n$inviteLink'
+        : 'Join my team "${team.name}" on AffTok!\n\n$inviteLink';
+    
+    Share.share(message);
+  }
+
+  // ============================================
+  // CONTESTS TAB
+  // ============================================
+
+  Widget _buildContestsTab(BuildContext context, AppLocalizations lang) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    
+    if (_loadingContests) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFF006E)),
+      );
+    }
+    
+    if (_activeContests.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.emoji_events_outlined,
+              size: 80,
+              color: Colors.white.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isArabic ? 'لا توجد مسابقات حالياً' : 'No active contests',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isArabic ? 'ترقب المسابقات القادمة!' : 'Stay tuned for upcoming contests!',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.3),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return RefreshIndicator(
+      onRefresh: _loadContests,
+      color: const Color(0xFFFF006E),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _activeContests.length,
+        itemBuilder: (context, index) {
+          final contest = _activeContests[index];
+          return _buildContestCard(context, contest, isArabic);
+        },
+      ),
     );
+  }
+
+  Widget _buildContestCard(BuildContext context, Contest contest, bool isArabic) {
+    final title = contest.getLocalizedTitle(isArabic ? 'ar' : 'en');
+    final description = contest.getLocalizedDescription(isArabic ? 'ar' : 'en');
+    final prizeTitle = contest.getLocalizedPrizeTitle(isArabic ? 'ar' : 'en');
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFFF006E).withOpacity(0.2),
+            const Color(0xFFFF6B35).withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFF006E).withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with image
+          if (contest.imageUrl != null && contest.imageUrl!.isNotEmpty)
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(
+                contest.imageUrl!,
+                height: 150,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFFFF006E),
+                          const Color(0xFFFF6B35),
+                        ],
+                      ),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.emoji_events, color: Colors.white, size: 60),
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFFFF006E),
+                    const Color(0xFFFF6B35),
+                  ],
+                ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: const Center(
+                child: Icon(Icons.emoji_events, color: Colors.white, size: 60),
+              ),
+            ),
+          
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title and Type Badge
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: contest.contestType == 'team' 
+                            ? Colors.blue.withOpacity(0.3)
+                            : Colors.green.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        contest.contestType == 'team'
+                            ? (isArabic ? 'فرق' : 'Teams')
+                            : (isArabic ? 'أفراد' : 'Individual'),
+                        style: TextStyle(
+                          color: contest.contestType == 'team' 
+                              ? Colors.blue[300]
+                              : Colors.green[300],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                if (description != null && description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                
+                const SizedBox(height: 16),
+                
+                // Prize Section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.military_tech, color: Colors.amber, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isArabic ? 'الجائزة' : 'Prize',
+                              style: TextStyle(
+                                color: Colors.amber.withOpacity(0.7),
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              prizeTitle ?? (contest.prizeAmount > 0 
+                                  ? '${contest.prizeAmount} ${contest.prizeCurrency}'
+                                  : (isArabic ? 'جائزة خاصة' : 'Special Prize')),
+                              style: const TextStyle(
+                                color: Colors.amber,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // Target & Stats Row
+                Row(
+                  children: [
+                    _buildContestStatItem(
+                      icon: _getTargetIcon(contest.targetType),
+                      label: isArabic ? 'الهدف' : 'Target',
+                      value: '${contest.targetValue} ${_getTargetLabel(contest.targetType, isArabic)}',
+                    ),
+                    const SizedBox(width: 16),
+                    _buildContestStatItem(
+                      icon: Icons.groups,
+                      label: isArabic ? 'المشاركون' : 'Participants',
+                      value: '${contest.participantsCount}',
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                
+                // Time Left
+                Row(
+                  children: [
+                    Icon(
+                      Icons.timer_outlined,
+                      color: contest.isEnded ? Colors.red : Colors.orange,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      contest.isEnded 
+                          ? (isArabic ? 'انتهت المسابقة' : 'Contest ended')
+                          : '${isArabic ? 'المتبقي:' : 'Time left:'} ${contest.timeLeftFormatted}',
+                      style: TextStyle(
+                        color: contest.isEnded ? Colors.red : Colors.orange,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Action Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: contest.isActive ? () => _joinContest(contest) : null,
+                    icon: Icon(
+                      contest.isActive ? Icons.add : Icons.lock_outline,
+                      size: 18,
+                    ),
+                    label: Text(
+                      contest.isActive 
+                          ? (isArabic ? 'انضم للمسابقة' : 'Join Contest')
+                          : (isArabic ? 'غير متاحة' : 'Not Available'),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: contest.isActive 
+                          ? const Color(0xFFFF006E)
+                          : Colors.grey[700],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContestStatItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Expanded(
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white54, size: 18),
+          const SizedBox(width: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getTargetIcon(String targetType) {
+    switch (targetType) {
+      case 'clicks':
+        return Icons.touch_app;
+      case 'conversions':
+        return Icons.shopping_cart;
+      case 'referrals':
+        return Icons.people;
+      case 'points':
+        return Icons.stars;
+      default:
+        return Icons.flag;
+    }
+  }
+
+  String _getTargetLabel(String targetType, bool isArabic) {
+    switch (targetType) {
+      case 'clicks':
+        return isArabic ? 'نقرة' : 'clicks';
+      case 'conversions':
+        return isArabic ? 'تحويل' : 'conversions';
+      case 'referrals':
+        return isArabic ? 'إحالة' : 'referrals';
+      case 'points':
+        return isArabic ? 'نقطة' : 'points';
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _joinContest(Contest contest) async {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    final result = await _contestService.joinContest(contest.id);
+    final success = result['success'] as bool;
+    final message = result['message'] as String;
+    
+    if (success) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(isArabic ? 'تم الانضمام للمسابقة بنجاح!' : message),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadContests();
+    } else {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

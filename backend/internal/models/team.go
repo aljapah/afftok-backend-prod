@@ -19,6 +19,11 @@ type Team struct {
 	TotalClicks int       `gorm:"default:0" json:"total_clicks"`
 	TotalConversions int  `gorm:"default:0" json:"total_conversions"`
 	Status      string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	
+	// Invite system
+	InviteCode  string    `gorm:"type:varchar(20);uniqueIndex" json:"invite_code,omitempty"`
+	InviteURL   string    `gorm:"type:text" json:"invite_url,omitempty"`
+	
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 
@@ -38,6 +43,7 @@ type TeamMember struct {
 	TeamID    uuid.UUID `gorm:"type:uuid;not null" json:"team_id"`
 	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
 	Role      string    `gorm:"type:varchar(20);default:'member'" json:"role"` // owner, admin, member
+	Status    string    `gorm:"type:varchar(20);default:'active'" json:"status"` // active, pending, rejected
 	Points    int       `gorm:"default:0" json:"points"`
 	JoinedAt  time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"joined_at"`
 	
@@ -51,3 +57,9 @@ func (TeamMember) TableName() string {
 	return "team_members"
 }
 
+// TeamMember Status Constants
+const (
+	TeamMemberStatusActive   = "active"
+	TeamMemberStatusPending  = "pending"
+	TeamMemberStatusRejected = "rejected"
+)

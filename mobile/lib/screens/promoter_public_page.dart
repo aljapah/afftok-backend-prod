@@ -284,11 +284,8 @@ class _PromoterPublicPageState extends State<PromoterPublicPage> {
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context);
-        return false;
-      },
+    return PopScope(
+      canPop: true,
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(

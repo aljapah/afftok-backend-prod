@@ -65,6 +65,7 @@ export const networks = pgTable("networks", {
 export const offers = pgTable("offers", {
   id: uuid("id").primaryKey().defaultRandom(),
   networkId: uuid("network_id"),
+  advertiserId: uuid("advertiser_id"), // The advertiser who created this offer
   externalOfferId: varchar("external_offer_id", { length: 100 }),
   // English Fields
   title: varchar("title", { length: 255 }).notNull(),
@@ -83,7 +84,8 @@ export const offers = pgTable("offers", {
   payoutType: varchar("payout_type", { length: 20 }).default("cpa").notNull(),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0.0").notNull(),
   usersCount: integer("users_count").default(0).notNull(),
-  status: varchar("status", { length: 20 }).default("pending").notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, active, rejected, paused
+  rejectionReason: text("rejection_reason"), // Reason if rejected
   totalClicks: integer("total_clicks").default(0).notNull(),
   totalConversions: integer("total_conversions").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

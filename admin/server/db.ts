@@ -238,6 +238,35 @@ export async function deleteOffer(id: string) {
   return { success: true };
 }
 
+export async function approveOffer(id: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(offers)
+    .set({ 
+      status: 'active',
+      updatedAt: new Date()
+    })
+    .where(eq(offers.id, id));
+  
+  return { success: true, message: "Offer approved successfully" };
+}
+
+export async function rejectOffer(id: string, reason?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(offers)
+    .set({ 
+      status: 'rejected',
+      rejectionReason: reason || null,
+      updatedAt: new Date()
+    })
+    .where(eq(offers.id, id));
+  
+  return { success: true, message: "Offer rejected" };
+}
+
 export async function getDashboardStats() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -362,4 +391,135 @@ export async function deleteBadge(id: string) {
   
   await db.delete(badges).where(eq(badges.id, id));
   return { success: true };
+}
+
+// ============ CONTESTS / CHALLENGES ============
+
+export async function getAllContests() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.execute(sql`
+    SELECT * FROM contests ORDER BY created_at DESC
+  `);
+  
+  return result.rows || [];
+}
+
+export async function createContest(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.execute(sql`
+    INSERT INTO contests (
+      title, title_ar, description, description_ar, image_url,
+      prize_title, prize_title_ar, prize_description, prize_description_ar,
+      prize_amount, prize_currency, contest_type, target_type, target_value,
+      min_clicks, min_conversions, min_members, max_participants,
+      start_date, end_date, status
+    ) VALUES (
+      ${data.title}, ${data.titleAr}, ${data.description}, ${data.descriptionAr}, ${data.imageUrl},
+      ${data.prizeTitle}, ${data.prizeTitleAr}, ${data.prizeDescription}, ${data.prizeDescriptionAr || null},
+      ${data.prizeAmount || 0}, ${data.prizeCurrency || 'USD'}, ${data.contestType || 'individual'}, 
+      ${data.targetType || 'clicks'}, ${data.targetValue || 100},
+      ${data.minClicks || 0}, ${data.minConversions || 0}, ${data.minMembers || 1}, ${data.maxParticipants || 0},
+      ${data.startDate}::timestamp, ${data.endDate}::timestamp, ${data.status || 'draft'}
+    ) RETURNING *
+  `);
+  
+  return result.rows?.[0] || null;
+}
+
+export async function updateContest(data: { id: string; [key: string]: any }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { id, ...updates } = data;
+  
+  // Build the SET clause dynamically
+  const setClauses: string[] = [];
+  const values: any[] = [];
+  
+  const fieldMap: Record<string, string> = {
+    title: 'title',
+    titleAr: 'title_ar',
+    description: 'description',
+    descriptionAr: 'description_ar',
+    imageUrl: 'image_url',
+    prizeTitle: 'prize_title',
+    prizeTitleAr: 'prize_title_ar',
+    prizeDescription: 'prize_description',
+    prizeAmount: 'prize_amount',
+    prizeCurrency: 'prize_currency',
+    contestType: 'contest_type',
+    targetType: 'target_type',
+    targetValue: 'target_value',
+    minClicks: 'min_clicks',
+    minConversions: 'min_conversions',
+    minMembers: 'min_members',
+    maxParticipants: 'max_participants',
+    startDate: 'start_date',
+    endDate: 'end_date',
+    status: 'status',
+  };
+  
+  for (const [key, dbField] of Object.entries(fieldMap)) {
+    if (updates[key] !== undefined) {
+      setClauses.push(`${dbField} = $${setClauses.length + 2}`);
+      values.push(updates[key]);
+    }
+  }
+  
+  if (setClauses.length === 0) {
+    return { success: true };
+  }
+  
+  setClauses.push('updated_at = NOW()');
+  
+  await db.execute(sql.raw(`
+    UPDATE contests SET ${setClauses.join(', ')} WHERE id = $1
+  `.replace('$1', `'${id}'`).replace(/\$(\d+)/g, (_, n) => {
+    const idx = parseInt(n) - 2;
+    const val = values[idx];
+    if (val === null) return 'NULL';
+    if (typeof val === 'string') return `'${val}'`;
+    return String(val);
+  })));
+  
+  return { success: true };
+}
+
+export async function deleteContest(id: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Delete participants first
+  await db.execute(sql`DELETE FROM contest_participants WHERE contest_id = ${id}::uuid`);
+  
+  // Then delete contest
+  await db.execute(sql`DELETE FROM contests WHERE id = ${id}::uuid`);
+  
+  return { success: true };
+}
+
+export async function activateContest(id: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.execute(sql`
+    UPDATE contests SET status = 'active', updated_at = NOW() WHERE id = ${id}::uuid
+  `);
+  
+  return { success: true, message: "Contest activated" };
+}
+
+export async function endContest(id: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.execute(sql`
+    UPDATE contests SET status = 'ended', updated_at = NOW() WHERE id = ${id}::uuid
+  `);
+  
+  return { success: true, message: "Contest ended" };
 }

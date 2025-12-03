@@ -28,6 +28,7 @@ func (Network) TableName() string {
 type Offer struct {
 	ID               uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	NetworkID        *uuid.UUID `gorm:"type:uuid" json:"network_id,omitempty"`
+	AdvertiserID     *uuid.UUID `gorm:"type:uuid;index" json:"advertiser_id,omitempty"` // NEW: Link to advertiser user
 	ExternalOfferID  string     `gorm:"type:varchar(100)" json:"external_offer_id,omitempty"`
 	
 	// English Fields
@@ -49,12 +50,14 @@ type Offer struct {
 	PayoutType       string     `gorm:"type:varchar(20);default:'cpa'" json:"payout_type"`
 	Rating           float64    `gorm:"type:decimal(3,2);default:0.0" json:"rating"`
 	UsersCount       int        `gorm:"default:0" json:"users_count"`
-	Status           string     `gorm:"type:varchar(20);default:'pending'" json:"status"`
+	Status           string     `gorm:"type:varchar(20);default:'pending'" json:"status"` // pending, active, rejected, paused
+	RejectionReason  string     `gorm:"type:text" json:"rejection_reason,omitempty"`      // NEW: Reason if rejected
 	TotalClicks      int        `gorm:"default:0" json:"total_clicks"`
 	TotalConversions int        `gorm:"default:0" json:"total_conversions"`
 	CreatedAt        time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt        time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
-	Network          *Network   `gorm:"foreignKey:NetworkID" json:"network,omitempty"`
+	Network          *Network    `gorm:"foreignKey:NetworkID" json:"network,omitempty"`
+	Advertiser       *AfftokUser `gorm:"foreignKey:AdvertiserID" json:"advertiser,omitempty"` // NEW: Advertiser relationship
 	UserOffers       []UserOffer `gorm:"foreignKey:OfferID" json:"user_offers,omitempty"`
 }
 

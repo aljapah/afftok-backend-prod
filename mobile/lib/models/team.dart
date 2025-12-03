@@ -3,8 +3,12 @@ class Team {
   final String name;
   final String? logoUrl;
   final String? description;
+  final String ownerId;
+  final String? inviteCode;
+  final String? inviteUrl;
   final TeamRank rank;
   final List<TeamMember> members;
+  final List<TeamMember> pendingMembers;
   final TeamStats stats;
   final int maxMembers;
   final DateTime createdAt;
@@ -14,8 +18,12 @@ class Team {
     required this.name,
     this.logoUrl,
     this.description,
+    required this.ownerId,
+    this.inviteCode,
+    this.inviteUrl,
     required this.rank,
     required this.members,
+    this.pendingMembers = const [],
     required this.stats,
     this.maxMembers = 10,
     required this.createdAt,
@@ -35,16 +43,28 @@ class Team {
     final totalConversions = json['total_conversions'] ?? 0;
     final memberCount = json['member_count'] ?? 0;
     
+    // Parse members - only active members
+    final membersList = (json['members'] as List<dynamic>?)
+        ?.map((m) => TeamMember.fromJson(m))
+        .where((m) => m.status == 'active')
+        .toList() ?? [];
+    
+    // Parse pending members if available
+    final pendingList = (json['pending_members'] as List<dynamic>?)
+        ?.map((m) => TeamMember.fromJson(m))
+        .toList() ?? [];
+    
     return Team(
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       logoUrl: json['logo_url'],
       description: json['description'],
+      ownerId: json['owner_id']?.toString() ?? '',
+      inviteCode: json['invite_code'],
+      inviteUrl: json['invite_url'],
       rank: _parseRank(totalPoints),
-      members: (json['members'] as List<dynamic>?)
-              ?.map((m) => TeamMember.fromJson(m))
-              .toList() ??
-          [],
+      members: membersList,
+      pendingMembers: pendingList,
       stats: TeamStats(
         totalPoints: totalPoints,
         totalClicks: totalClicks,
@@ -58,6 +78,8 @@ class Team {
           : DateTime.now(),
     );
   }
+  
+  bool isOwner(String userId) => ownerId == userId;
 
   Map<String, dynamic> toJson() {
     return {
@@ -142,11 +164,13 @@ class TeamMember {
   final String displayName;
   final String? avatarUrl;
   final String role;
+  final String status; // pending, active, rejected
   final int points;
   final int referrals;
   final int conversions;
   final int teamRank;
   final DateTime joinedAt;
+  final DateTime? approvedAt;
 
   TeamMember({
     required this.id,
@@ -156,15 +180,19 @@ class TeamMember {
     required this.displayName,
     this.avatarUrl,
     required this.role,
+    this.status = 'active',
     this.points = 0,
     this.referrals = 0,
     this.conversions = 0,
     this.teamRank = 0,
     required this.joinedAt,
+    this.approvedAt,
   });
 
   bool get isLeader => role == 'owner';
   bool get isAdmin => role == 'admin' || role == 'owner';
+  bool get isPending => status == 'pending';
+  bool get isActive => status == 'active';
 
   factory TeamMember.fromJson(Map<String, dynamic> json) {
     // Handle nested user object from backend
@@ -178,6 +206,7 @@ class TeamMember {
       displayName: userJson['full_name'] ?? userJson['display_name'] ?? json['display_name'] ?? '',
       avatarUrl: userJson['avatar_url'] ?? json['avatar_url'],
       role: json['role'] ?? 'member',
+      status: json['status'] ?? 'active',
       points: json['points'] ?? 0,
       referrals: userJson['total_clicks'] ?? json['referrals'] ?? 0,
       conversions: userJson['total_conversions'] ?? json['conversions'] ?? 0,
@@ -185,6 +214,9 @@ class TeamMember {
       joinedAt: json['joined_at'] != null 
           ? DateTime.parse(json['joined_at']) 
           : DateTime.now(),
+      approvedAt: json['approved_at'] != null 
+          ? DateTime.parse(json['approved_at']) 
+          : null,
     );
   }
 }

@@ -36,10 +36,16 @@ func NewAuthHandler(db *gorm.DB) *AuthHandler {
 
 func (h *AuthHandler) Register(c *gin.Context) {
 	type RegisterRequest struct {
-		Username string `json:"username" binding:"required,min=3,max=50"`
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=6"`
-		FullName string `json:"full_name"`
+		Username    string `json:"username" binding:"required,min=3,max=50"`
+		Email       string `json:"email" binding:"required,email"`
+		Password    string `json:"password" binding:"required,min=6"`
+		FullName    string `json:"full_name"`
+		Role        string `json:"role"`         // "promoter" or "advertiser"
+		// Advertiser-specific fields
+		CompanyName string `json:"company_name"`
+		Phone       string `json:"phone"`
+		Website     string `json:"website"`
+		Country     string `json:"country"`
 	}
 
 	var req RegisterRequest
@@ -58,6 +64,24 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	for _, r := range req.Username {
 		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_') {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Username can only contain letters, numbers, and underscores"})
+			return
+		}
+	}
+
+	// Validate role
+	role := req.Role
+	if role == "" || role == "user" {
+		role = "promoter" // Default to promoter
+	}
+	if role != "promoter" && role != "advertiser" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid role. Must be 'promoter' or 'advertiser'"})
+		return
+	}
+
+	// Advertiser-specific validation
+	if role == "advertiser" {
+		if req.CompanyName == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Company name is required for advertisers"})
 			return
 		}
 	}
@@ -85,10 +109,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Email:        req.Email,
 		PasswordHash: hashedPassword,
 		FullName:     req.FullName,
-		Role:         "user",
+		Role:         role,
 		Status:       "active",
 		Points:       0,
 		Level:        1,
+		// Advertiser-specific fields
+		CompanyName:  req.CompanyName,
+		Phone:        req.Phone,
+		Website:      req.Website,
+		Country:      req.Country,
 	}
 
 	if err := h.db.Create(&user).Error; err != nil {

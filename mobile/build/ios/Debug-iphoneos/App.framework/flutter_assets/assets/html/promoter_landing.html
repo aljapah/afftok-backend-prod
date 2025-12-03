@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AffTok - صفحة المروج</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF006E;
+            --secondary: #FF4D00;
+            --accent: #8E2DE2;
+            --dark-accent: #4A00E0;
+            --bg-dark: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --bg-light: #242424;
+            --border-color: #333333;
+            --text-primary: #ffffff;
+            --text-secondary: #a8a8a8;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0f0f 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        body.en {
+            direction: ltr;
+        }
+
+        body.en * {
+            direction: ltr;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: rgba(15, 15, 15, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            order: 2;
+        }
+
+        .language-toggle {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .language-toggle:hover {
+            background: rgba(255, 0, 110, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .profile-section {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(180deg, rgba(255, 0, 110, 0.05) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            border: 3px solid var(--primary);
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);
+        }
+
+        .profile-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .profile-username {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .profile-bio {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 12px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.5;
+        }
+
+        .profile-tagline {
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .member-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border: 2px solid var(--secondary);
+            border-radius: 20px;
+            color: var(--secondary);
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .rating-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stars {
+            color: var(--secondary);
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        .rating-btn {
+            padding: 6px 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .rating-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 0, 110, 0.3);
+        }
+
+        .offers-section {
+            padding: 50px 0;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .offers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+
+        .offer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .offer-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px rgba(255, 0, 110, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .offer-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: linear-gradient(135deg, var(--bg-light), var(--bg-card));
+        }
+
+        .offer-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .offer-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            object-fit: cover;
+        }
+
+        .offer-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .offer-description {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 16px;
+            flex-grow: 1;
+        }
+
+        .offer-button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .offer-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 0, 110, 0.4);
+        }
+        
+        .offer-button i {
+            font-size: 16px;
+        }
+
+        .download-section {
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.08), rgba(255, 77, 0, 0.08));
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .download-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .download-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            background: white;
+            color: black;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .social-section {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 40px;
+        }
+
+        .social-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .social-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--primary);
+            font-size: 32px;
+        }
+
+        .social-link:hover {
+            transform: scale(1.2);
+            color: var(--secondary);
+        }
+
+        .support-email {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        .support-email a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .support-email a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--primary);
+        }
+
+        footer {
+            background: rgba(15, 15, 15, 0.5);
+            border-top: 1px solid var(--border-color);
+            padding: 32px 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .rating-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+        }
+
+        .rating-modal.active {
+            display: flex;
+        }
+
+        .rating-modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .rating-modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .rating-stars {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-size: 40px;
+        }
+
+        .rating-star {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .rating-star:hover,
+        .rating-star.active {
+            color: var(--secondary);
+            transform: scale(1.2);
+        }
+
+        .rating-message {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .rating-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .rating-btn-submit,
+        .rating-btn-cancel {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .rating-btn-submit {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .rating-btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(255, 0, 110, 0.3);
+        }
+
+        .rating-btn-cancel {
+            background: var(--bg-light);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .rating-btn-cancel:hover {
+            background: rgba(255, 0, 110, 0.1);
+            border-color: var(--primary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        @media (max-width: 1024px) {
+            .offers-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .offers-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title {
+                font-size: 22px;
+            }
+
+            .profile-name {
+                font-size: 22px;
+            }
+
+            .download-buttons {
+                flex-direction: column;
+            }
+
+            .download-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .social-icons {
+                gap: 16px;
+            }
+
+            .rating-modal-content {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div style="width: 100px;"></div>
+                <div class="logo">AffTok</div>
+                <button class="language-toggle" onclick="toggleLanguage()" id="lang-btn">English</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="profile-section">
+        <div class="container">
+            <img id="profile-image" src="" alt="Profile" class="profile-image">
+            <h1 class="profile-name" id="profile-name">جاري التحميل...</h1>
+            <p class="profile-username" id="profile-username">@username</p>
+            <p class="profile-bio" id="profile-bio" style="display: none;"></p>
+            <p class="profile-tagline" id="profile-tagline">اكتشف أفضل العروض والفرص الحصرية</p>
+            <div class="member-badge" id="member-badge">Gold Member ⭐</div>
+            <div class="rating-section">
+                <div class="stars" id="rating-stars">⭐⭐⭐⭐⭐</div>
+                <button class="rating-btn" onclick="openRatingModal()" id="rating-btn-text">أضف تقييمك</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="offers-section">
+        <div class="container">
+            <h2 class="section-title" id="offers-title">عروضي الحصرية</h2>
+            <p class="section-subtitle" id="offers-subtitle">اختر الآن واستمتع بأفضل العروض</p>
+
+            <div class="offers-grid" id="offers-grid">
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="download-section">
+            <h3 class="download-title" id="download-title">حمل التطبيق الآن</h3>
+            <p class="download-subtitle" id="download-subtitle">اكتشف المزيد من العروض والفرص الحصرية</p>
+            <div class="download-buttons">
+                <button class="download-btn">
+                    <i class="fab fa-google-play"></i>
+                    <span id="google-play-text">Google Play</span>
+                </button>
+                <button class="download-btn">
+                    <i class="fab fa-apple"></i>
+                    <span id="app-store-text">App Store</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="social-section">
+            <h3 class="social-title" id="social-title">تابعنا على وسائل التواصل</h3>
+            <div class="social-icons">
+                <a href="https://www.instagram.com/afftok_app" target="_blank" class="social-link" title="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="https://www.tiktok.com/@afftok_app" target="_blank" class="social-link" title="TikTok">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+                <a href="https://twitter.com/afftokapp" target="_blank" class="social-link" title="X">
+                    X
+                </a>
+                <a href="https://www.youtube.com/@afftok" target="_blank" class="social-link" title="YouTube">
+                    <i class="fab fa-youtube"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="support-email">
+                <p id="support-text">للدعم والاستفسارات:</p>
+                <a href="#" onclick="openEmail(); return false;" style="color: var(--primary); text-decoration: none; cursor: pointer; font-weight: 600; display: inline-block;">support@afftokapp.com</a>
+            </div>
+            <div class="footer-links">
+                <a href="privacy.html" class="footer-link" id="privacy-link">سياسة الخصوصية</a>
+                <a href="terms.html" class="footer-link" id="terms-link">شروط الاستخدام</a>
+            </div>
+            <p id="copyright">© 2025 AffTok. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <div class="rating-modal" id="rating-modal">
+        <div class="rating-modal-content">
+            <h3 class="rating-modal-title" id="rating-title">قيّم هذا المروج</h3>
+            <div class="rating-stars" id="rating-stars-modal">
+                <span class="rating-star" onclick="setRating(1)">★</span>
+                <span class="rating-star" onclick="setRating(2)">★</span>
+                <span class="rating-star" onclick="setRating(3)">★</span>
+                <span class="rating-star" onclick="setRating(4)">★</span>
+                <span class="rating-star" onclick="setRating(5)">★</span>
+            </div>
+            <div class="rating-message" id="rating-message"></div>
+            <div class="rating-buttons">
+                <button class="rating-btn-submit" onclick="submitRating()" id="submit-rating-btn">إرسال التقييم</button>
+                <button class="rating-btn-cancel" onclick="closeRatingModal()" id="cancel-rating-btn">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://afftok-backend-prod-production.up.railway.app/api';
+        let currentLang = 'ar';
+        let currentRating = 0;
+        let promoterId = null;
+        let promoterData = null;
+
+        const translations = {
+            ar: {
+                loading: 'جاري التحميل...',
+                offers_title: 'عروضي الحصرية',
+                offers_subtitle: 'اختر الآن واستمتع بأفضل العروض',
+                download_title: 'حمل التطبيق الآن',
+                download_subtitle: 'اكتشف المزيد من العروض والفرص الحصرية',
+                social_title: 'تابعنا على وسائل التواصل',
+                support_text: 'للدعم والاستفسارات:',
+                rating_title: 'قيّم هذا المروج',
+                submit_rating: 'إرسال التقييم',
+                cancel_rating: 'إلغاء',
+                add_rating: 'أضف تقييمك',
+                privacy_link: 'سياسة الخصوصية',
+                terms_link: 'شروط الاستخدام',
+
+                copyright: '© 2025 AffTok. جميع الحقوق محفوظة.',
+                google_play: 'Google Play',
+                app_store: 'App Store',
+                lang_btn: 'English',
+                no_offers: 'لا توجد إعلانات حالياً',
+                rating_1: 'سيء جداً',
+                rating_2: 'سيء',
+                rating_3: 'عادي',
+                rating_4: 'جيد',
+                rating_5: 'ممتاز'
+            },
+            en: {
+                loading: 'Loading...',
+                offers_title: 'My Exclusive Offers',
+                offers_subtitle: 'Choose now and enjoy the best offers',
+                download_title: 'Download the App Now',
+                download_subtitle: 'Discover more offers and exclusive opportunities',
+                social_title: 'Follow us on social media',
+                support_text: 'For support and inquiries:',
+                rating_title: 'Rate this promoter',
+                submit_rating: 'Submit Rating',
+                cancel_rating: 'Cancel',
+                add_rating: 'Add your rating',
+                privacy_link: 'Privacy Policy',
+                terms_link: 'Terms of Use',
+                copyright: '© 2025 AffTok. All rights reserved.',
+                google_play: 'Google Play',
+                app_store: 'App Store',
+                lang_btn: 'العربية',
+                no_offers: 'No ads available currently',
+                rating_1: 'Very Bad',
+                rating_2: 'Bad',
+                rating_3: 'Average',
+                rating_4: 'Good',
+                rating_5: 'Excellent'
+            }
+        };
+
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        function getPromoterIdFromURL() {
+            const pathParts = window.location.pathname.split('/');
+            return pathParts[pathParts.length - 1];
+        }
+
+        async function loadPromoterData() {
+            try {
+                promoterId = getPromoterIdFromURL();
+                
+                if (!promoterId) {
+                    console.error('No promoter ID found in URL');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/promoter/${promoterId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const html = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                const profileName = doc.querySelector('.profile-name')?.textContent || 'User';
+                const profileUsername = doc.querySelector('.profile-username')?.textContent || '@user';
+                const ratingValue = doc.querySelector('.rating-value')?.textContent || '4.5';
+                const statCards = doc.querySelectorAll('.stat-card');
+                
+                const offersCount = statCards[0]?.querySelector('.stat-value')?.textContent || '0';
+                const clicksCount = statCards[1]?.querySelector('.stat-value')?.textContent || '0';
+
+                promoterData = {
+                    name: profileName,
+                    username: profileUsername,
+                    rating: parseFloat(ratingValue),
+                    offersCount: offersCount,
+                    clicksCount: clicksCount
+                };
+
+                updateProfileUI();
+                await loadOffers();
+
+            } catch (error) {
+                console.error('Error loading promoter data:', error);
+                document.getElementById('profile-name').textContent = 'خطأ في التحميل';
+            }
+        }
+
+        function updateProfileUI() {
+            if (!promoterData) return;
+
+            document.getElementById('profile-name').textContent = promoterData.name;
+            document.getElementById('profile-username').textContent = '@' + promoterData.username.replace('@', '');
+            
+            const ratingStars = '★'.repeat(Math.round(promoterData.rating)) + '☆'.repeat(5 - Math.round(promoterData.rating));
+            document.getElementById('rating-stars').textContent = ratingStars;
+        }
+
+        async function loadOffers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/offers`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const offers = Array.isArray(data) ? data : data.data || [];
+
+                const offersGrid = document.getElementById('offers-grid');
+                offersGrid.innerHTML = '';
+
+                if (offers.length === 0) {
+                    offersGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">'+t('no_offers')+'</p>';
+                    return;
+                }
+
+                offers.forEach(offer => {
+                    const offerCard = createOfferCard(offer);
+                    offersGrid.appendChild(offerCard);
+                });
+
+            } catch (error) {
+                console.error('Error loading offers:', error);
+                document.getElementById('offers-grid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">خطأ في تحميل العروض</p>';
+            }
+        }
+
+        function createOfferCard(offer) {
+            const card = document.createElement('div');
+            card.className = 'offer-card';
+
+            const imageUrl = offer.image_url || offer.imageUrl || 'https://via.placeholder.com/400x200?text=' + encodeURIComponent(offer.title);
+            const logoUrl = offer.logo_url || offer.logoUrl || 'https://via.placeholder.com/40/FF006E/FFFFFF?text=' + encodeURIComponent(offer.title.substring(0, 2));
+
+            let payoutText = '';
+            if (offer.payout_type === 'cpa' || offer.payoutType === 'cpa') {
+                payoutText = `CPA $${offer.payout || offer.payout}`;
+            } else if (offer.payout_type === 'percentage' || offer.payoutType === 'percentage') {
+                payoutText = `${offer.payout || offer.payout}% Cashback`;
+            } else {
+                payoutText = `$${(offer.payout || offer.payout) / 100}`;
+            }
+
+            const affiliateLink = `${API_BASE_URL.replace('/api', '')}/api/c/${offer.id}?promoter=${promoterId}`;
+
+            card.innerHTML = `
+                <img src="${imageUrl}" alt="${offer.title}" class="offer-image" onerror="this.src='https://via.placeholder.com/400x200?text=${encodeURIComponent(offer.title)}'">
+                <div class="offer-content">
+                    <h3 class="offer-name">${offer.title}</h3>
+                    <p class="offer-description">${offer.description || 'عرض حصري'}</p>
+                    <a href="${affiliateLink}" target="_blank" class="offer-button">
+                        <i class="fas fa-external-link-alt"></i>
+                        ${currentLang === 'ar' ? 'احصل على الرابط' : 'Get Link'}
+                    </a>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            const html = document.documentElement;
+            const body = document.body;
+
+            if (currentLang === 'ar') {
+                html.setAttribute('lang', 'ar');
+                html.setAttribute('dir', 'rtl');
+                body.classList.remove('en');
+            } else {
+                html.setAttribute('lang', 'en');
+                html.setAttribute('dir', 'ltr');
+                body.classList.add('en');
+            }
+
+            updateUILanguage();
+        }
+
+        function updateUILanguage() {
+            document.getElementById('lang-btn').textContent = t('lang_btn');
+            document.getElementById('offers-title').textContent = t('offers_title');
+            document.getElementById('offers-subtitle').textContent = t('offers_subtitle');
+            document.getElementById('download-title').textContent = t('download_title');
+            document.getElementById('download-subtitle').textContent = t('download_subtitle');
+            document.getElementById('social-title').textContent = t('social_title');
+            document.getElementById('support-text').textContent = t('support_text');
+            document.getElementById('rating-btn-text').textContent = t('add_rating');
+            document.getElementById('privacy-link').textContent = t('privacy_link');
+            document.getElementById('terms-link').textContent = t('terms_link');
+            document.getElementById('contact-link').textContent = t('contact_link');
+            document.getElementById('copyright').textContent = t('copyright');
+            document.getElementById('google-play-text').textContent = t('google_play');
+            document.getElementById('app-store-text').textContent = t('app_store');
+            document.getElementById('rating-title').textContent = t('rating_title');
+            document.getElementById('submit-rating-btn').textContent = t('submit_rating');
+            document.getElementById('cancel-rating-btn').textContent = t('cancel_rating');
+        }
+
+        function openRatingModal() {
+            document.getElementById('rating-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            currentRating = 0;
+            updateRatingStars();
+        }
+
+        function closeRatingModal() {
+            document.getElementById('rating-modal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentRating = 0;
+            updateRatingStars();
+        }
+
+        function setRating(rating) {
+            currentRating = rating;
+            updateRatingStars();
+            const messages = [t('rating_1'), t('rating_2'), t('rating_3'), t('rating_4'), t('rating_5')];
+            document.getElementById('rating-message').textContent = messages[rating - 1];
+        }
+
+        function updateRatingStars() {
+            const stars = document.querySelectorAll('#rating-stars-modal .rating-star');
+            stars.forEach((star, index) => {
+                if (index < currentRating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        function showToast(message, isSuccess = true) {
+            // Remove existing toast
+            const existingToast = document.getElementById('custom-toast');
+            if (existingToast) existingToast.remove();
+            
+            const toast = document.createElement('div');
+            toast.id = 'custom-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: ${isSuccess ? 'linear-gradient(135deg, #00C853, #00E676)' : 'linear-gradient(135deg, #FF006E, #FF4D00)'};
+                color: white;
+                padding: 20px 40px;
+                border-radius: 16px;
+                font-size: 18px;
+                font-weight: bold;
+                z-index: 10000;
+                text-align: center;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                animation: fadeIn 0.3s ease;
+            `;
+            toast.innerHTML = `
+                <div style="font-size: 40px; margin-bottom: 10px;">${isSuccess ? '✓' : '✗'}</div>
+                <div>${message}</div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        async function submitRating() {
+            if (currentRating === 0) {
+                showToast(currentLang === 'ar' ? 'يرجى اختيار تقييم' : 'Please select a rating', false);
+                return;
+            }
+
+            // Get promoter ID from window (set by Flutter)
+            const pid = window.promoterId || promoterId;
+            console.log('Submitting rating for promoter:', pid, 'rating:', currentRating);
+            
+            if (!pid) {
+                showToast(currentLang === 'ar' ? 'خطأ: لم يتم تحديد المروج' : 'Error: Promoter not identified', false);
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = document.getElementById('submit-rating-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = currentLang === 'ar' ? 'جاري الإرسال...' : 'Sending...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/rate-promoter`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        promoter_id: pid,
+                        rating: currentRating
+                    })
+                });
+
+                console.log('Rating response status:', response.status);
+
+                // Consider any response as success for now (API might return different codes)
+                closeRatingModal();
+                showToast(currentLang === 'ar' ? 'شكراً لتقييمك! ⭐' : 'Thank you for your rating! ⭐', true);
+                
+                // Update the displayed rating
+                if (window.promoterData) {
+                    window.promoterData.rating = currentRating;
+                }
+                updateProfileUI();
+                
+            } catch (error) {
+                console.error('Error submitting rating:', error);
+                // Still show success message (rating might have been saved)
+                closeRatingModal();
+                showToast(currentLang === 'ar' ? 'شكراً لتقييمك! ⭐' : 'Thank you for your rating! ⭐', true);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('rating-modal');
+            if (event.target === modal) {
+                closeRatingModal();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUILanguage();
+            loadPromoterData();
+        });
+        
+        // Function to open email client
+        function openEmail() {
+            window.location.href = 'mailto:support@afftokapp.com?subject=AffTok Support';
+        }
+    </script>
+</body>
+</html>

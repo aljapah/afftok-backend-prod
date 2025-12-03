@@ -81,7 +81,9 @@ func main() {
 	teamHandler := handlers.NewTeamHandler(db)
 	badgeHandler := handlers.NewBadgeHandler(db)
 	clickHandler := handlers.NewClickHandler(db)
+	contestHandler := handlers.NewContestHandler(db)
 	promoterHandler := handlers.NewPromoterHandler(db)
+	advertiserHandler := handlers.NewAdvertiserHandler(db)
 	observabilityHandler := handlers.NewObservabilityHandler()
 	
 	// Phase 7: Admin Observability Handlers
@@ -215,6 +217,9 @@ func main() {
 			auth.POST("/logout", authHandler.Logout)
 		}
 
+		// Advertiser Registration (public - no auth required)
+		api.POST("/advertiser/register", advertiserHandler.RegisterAdvertiser)
+
 		// Click tracking with bot detection and rate limiting
 		api.GET("/c/:id", middleware.BotDetectionMiddleware(), clickHandler.TrackClick)
 		api.GET("/promoter/:id", promoterHandler.GetPromoterPage)
@@ -252,10 +257,18 @@ func main() {
 			teams := protected.Group("/teams")
 			{
 				teams.GET("", teamHandler.GetAllTeams)
+				teams.GET("/my", teamHandler.GetMyTeam)
 				teams.GET("/:id", teamHandler.GetTeam)
 				teams.POST("", teamHandler.CreateTeam)
 				teams.POST("/:id/join", teamHandler.JoinTeam)
 				teams.POST("/:id/leave", teamHandler.LeaveTeam)
+				teams.POST("/join/:code", teamHandler.JoinTeamByInviteCode)
+				teams.POST("/:id/approve/:memberId", teamHandler.ApproveMember)
+				teams.POST("/:id/reject/:memberId", teamHandler.RejectMember)
+				teams.DELETE("/:id/members/:memberId", teamHandler.RemoveMember)
+				teams.GET("/:id/pending", teamHandler.GetPendingRequests)
+				teams.POST("/:id/regenerate-invite", teamHandler.RegenerateInviteCode)
+				teams.DELETE("/:id", teamHandler.DeleteTeam)
 			}
 
 			badges := protected.Group("/badges")
@@ -264,11 +277,32 @@ func main() {
 				badges.GET("/my", badgeHandler.GetMyBadges)
 			}
 
+			// Contests / Challenges
+			contests := protected.Group("/contests")
+			{
+				contests.GET("", contestHandler.GetActiveContests)
+				contests.GET("/my", contestHandler.GetMyContests)
+				contests.GET("/:id", contestHandler.GetContest)
+				contests.GET("/:id/leaderboard", contestHandler.GetContestLeaderboard)
+				contests.POST("/:id/join", contestHandler.JoinContest)
+			}
+
 			clicks := protected.Group("/clicks")
 			{
 				clicks.GET("/my", clickHandler.GetMyClicks)
 				clicks.GET("/:id/stats", clickHandler.GetClickStats)
 				clicks.GET("/by-offer", clickHandler.GetClicksByOffer)
+			}
+
+			// ========== Advertiser Routes ==========
+			advertiser := protected.Group("/advertiser")
+			{
+				advertiser.GET("/offers", advertiserHandler.GetMyOffers)
+				advertiser.POST("/offers", advertiserHandler.CreateOffer)
+				advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
+				advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
+				advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
+				advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
 			}
 
 			admin := protected.Group("/admin")
@@ -289,9 +323,30 @@ func main() {
 				admin.POST("/conversions/:id/approve", postbackHandler.ApproveConversion)
 				admin.POST("/conversions/:id/reject", postbackHandler.RejectConversion)
 
+				// Pending Offers Management (for advertiser submissions)
+				admin.GET("/offers/pending", advertiserHandler.GetPendingOffers)
+				admin.POST("/offers/:id/approve", advertiserHandler.ApproveOffer)
+				admin.POST("/offers/:id/reject", advertiserHandler.RejectOffer)
+
+				// Contests / Challenges Management
+				admin.GET("/contests", contestHandler.AdminGetAllContests)
+				admin.POST("/contests", contestHandler.AdminCreateContest)
+				admin.GET("/contests/:id", contestHandler.GetContest)
+				admin.PUT("/contests/:id", contestHandler.AdminUpdateContest)
+				admin.DELETE("/contests/:id", contestHandler.AdminDeleteContest)
+				admin.GET("/contests/:id/participants", contestHandler.AdminGetContestParticipants)
+
 			admin.POST("/badges", badgeHandler.CreateBadge)
 			admin.PUT("/badges/:id", badgeHandler.UpdateBadge)
 			admin.DELETE("/badges/:id", badgeHandler.DeleteBadge)
+
+			// Contests / Challenges Management
+			admin.GET("/contests", contestHandler.AdminGetAllContests)
+			admin.POST("/contests", contestHandler.AdminCreateContest)
+			admin.GET("/contests/:id", contestHandler.GetContest)
+			admin.PUT("/contests/:id", contestHandler.AdminUpdateContest)
+			admin.DELETE("/contests/:id", contestHandler.AdminDeleteContest)
+			admin.GET("/contests/:id/participants", contestHandler.AdminGetContestParticipants)
 
 			// ============================================
 			// PHASE 7: SYSTEM OBSERVABILITY API LAYER

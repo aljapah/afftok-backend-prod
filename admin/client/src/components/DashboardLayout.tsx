@@ -36,7 +36,8 @@ import {
   Globe,
   Shield,
   FileText,
-  Webhook
+  Webhook,
+  Trophy
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -50,6 +51,7 @@ const menuItems = [
   { icon: Tag, label: "Offers", path: "/offers" },
   { icon: Network, label: "Networks", path: "/networks" },
   { icon: UsersRound, label: "Teams", path: "/teams" },
+  { icon: Trophy, label: "المسابقات | Contests", path: "/contests" },
   { icon: Award, label: "Badges", path: "/badges" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
 ];

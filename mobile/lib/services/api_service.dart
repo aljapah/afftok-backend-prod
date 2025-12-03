@@ -13,6 +13,12 @@ class ApiService {
   String? _accessToken;
   String? _refreshToken;
 
+  // Static baseUrl for external access
+  static String get baseUrl => ApiConfig.baseUrl;
+  
+  // Access token getter
+  String? get accessToken => _accessToken;
+
   // Initialize tokens from storage
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
@@ -98,7 +104,69 @@ class ApiService {
         
         return {
           'success': true,
-          'user': data['user'] != null ? User.fromJson(data['user']) : null,
+          'user': data['user'] != null ? User.fromJson(Map<String, dynamic>.from(data['user'])) : null,
+          'message': data['message'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': data['error'] ?? 'Registration failed',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Network error: ${e.toString()}',
+      };
+    }
+  }
+
+  // Register Advertiser (uses same endpoint as promoter but with role=advertiser)
+  Future<Map<String, dynamic>> registerAdvertiser({
+    required String username,
+    required String email,
+    required String password,
+    required String fullName,
+    required String companyName,
+    String? phone,
+    String? website,
+    String? country,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.register}'),
+        headers: _getHeaders(),
+        body: jsonEncode({
+          'username': username,
+          'email': email,
+          'password': password,
+          'full_name': fullName,
+          'role': 'advertiser',
+          'company_name': companyName,
+          'phone': phone ?? '',
+          'website': website ?? '',
+          'country': country ?? '',
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'error': 'Empty response from server',
+        };
+      }
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        // Save tokens
+        if (data['token'] != null) {
+          await _saveTokens(data['token'] as String, data['token'] as String);
+        }
+        
+        return {
+          'success': true,
+          'user': data['user'] != null ? User.fromJson(Map<String, dynamic>.from(data['user'])) : null,
           'message': data['message'],
         };
       } else {
@@ -150,7 +218,7 @@ class ApiService {
         
         return {
           'success': true,
-          'user': data['user'] != null ? User.fromJson(data['user']) : null,
+          'user': data['user'] != null ? User.fromJson(Map<String, dynamic>.from(data['user'])) : null,
           'message': data['message'],
         };
       } else {
@@ -479,7 +547,4 @@ class ApiService {
 
   // Check if user is logged in
   bool get isLoggedIn => _accessToken != null;
-  
-  // Get access token
-  String? get accessToken => _accessToken;
 }

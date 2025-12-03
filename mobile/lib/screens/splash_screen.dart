@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../utils/app_localizations.dart';
-import 'signin_screen.dart';
+import '../providers/auth_provider.dart';
+import 'role_selection_screen.dart';
+import 'home_feed_screen.dart';
+import 'advertiser/advertiser_dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -54,12 +58,33 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  void _navigateToHome() {
+  void _navigateToHome() async {
+    if (!mounted) return;
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Wait for auth to initialize
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    Widget destination;
+    
+    if (authProvider.isLoggedIn && authProvider.currentUser != null) {
+      // User is logged in - check role
+      final user = authProvider.currentUser!;
+      if (user.isAdvertiser) {
+        destination = const AdvertiserDashboardScreen();
+      } else {
+        destination = const HomeFeedScreen();
+      }
+    } else {
+      // Not logged in - show role selection
+      destination = const RoleSelectionScreen();
+    }
+    
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const SignInScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) => destination,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(
               opacity: animation,

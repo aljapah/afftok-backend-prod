@@ -22,7 +22,10 @@ class AuthProvider with ChangeNotifier {
   List<UserOffer> get userOffers => _userOffers;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get isLoggedIn => _currentUser != null;
+  // Check if logged in by token OR user
+  bool get isLoggedIn => _apiService.accessToken != null && _apiService.accessToken!.isNotEmpty;
+  bool get hasUser => _currentUser != null;
+  String? get token => _apiService.accessToken;
   
   int get totalOffersAdded => _userOffers.length;
   int get totalClicks => _userOffers.fold(0, (sum, offer) => sum + offer.stats.clicks);
@@ -87,6 +90,51 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Register Advertiser
+  Future<bool> registerAdvertiser({
+    required String username,
+    required String email,
+    required String password,
+    required String fullName,
+    required String companyName,
+    String? phone,
+    String? website,
+    String? country,
+  }) async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final result = await _apiService.registerAdvertiser(
+        username: username,
+        email: email,
+        password: password,
+        fullName: fullName,
+        companyName: companyName,
+        phone: phone,
+        website: website,
+        country: country,
+      );
+
+      _setLoading(false);
+
+      if (result['success'] == true) {
+        _currentUser = result['user'] as User;
+        notifyListeners();
+        return true;
+      } else {
+        _error = result['error'] as String?;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _setLoading(false);
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Login
   Future<bool> login({
     required String username,
@@ -122,6 +170,15 @@ class AuthProvider with ChangeNotifier {
       return;
     }
     
+    // Skip if not logged in
+    if (!isLoggedIn) {
+      print('[AuthProvider] Not logged in, skipping loadCurrentUser...');
+      _currentUser = null;
+      _userOffers = [];
+      notifyListeners();
+      return;
+    }
+    
     _setLoading(true);
     _error = null;
     
@@ -138,9 +195,18 @@ class AuthProvider with ChangeNotifier {
         print('[AuthProvider] Stats: clicks=${_currentUser?.stats.totalClicks}, conversions=${_currentUser?.stats.totalConversions}');
         await _loadUserOffers();
       } else {
+        final errorMsg = result['error'] as String? ?? 'Failed to load user data';
+        print('[AuthProvider] Failed: $errorMsg');
+        
+        // If token is invalid or expired, logout automatically
+        if (errorMsg.contains('Invalid') || errorMsg.contains('expired') || errorMsg.contains('token')) {
+          print('[AuthProvider] Token expired - logging out...');
+          await logout();
+          return;
+        }
+        
         _currentUser = null;
-        _error = result['error'] as String? ?? 'Failed to load user data';
-        print('[AuthProvider] Failed: $_error');
+        _error = errorMsg;
       }
     } catch (e) {
       _currentUser = null;

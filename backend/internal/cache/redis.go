@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"runtime"
 	"time"
 
 	"github.com/aljapah/afftok-backend-prod/internal/config"
@@ -46,13 +45,20 @@ type RedisConfig struct {
 	WriteTimeout    time.Duration
 }
 
-// DefaultRedisConfig returns optimized Redis configuration for high load
+// DefaultRedisConfig returns optimized Redis configuration
+// NOTE: For Redis Cloud free tier (30MB), max connections is ~30
+// For production, increase these values based on your Redis plan
 func DefaultRedisConfig() RedisConfig {
-	numCPU := runtime.NumCPU()
+	// Use conservative values for free tier Redis
+	// Upgrade these for production Redis plans
+	poolSize := 10        // Max 10 connections (free tier safe)
+	minIdle := 2          // Keep 2 connections ready
+	maxIdle := 5          // Max 5 idle connections
+	
 	return RedisConfig{
-		PoolSize:        numCPU * 20,        // 20 connections per CPU
-		MinIdleConns:    numCPU * 5,         // Keep some connections ready
-		MaxIdleConns:    numCPU * 10,        // Max idle connections
+		PoolSize:        poolSize,
+		MinIdleConns:    minIdle,
+		MaxIdleConns:    maxIdle,
 		ConnMaxIdleTime: 5 * time.Minute,    // Close idle connections after 5 min
 		ConnMaxLifetime: 30 * time.Minute,   // Recycle connections every 30 min
 		PoolTimeout:     4 * time.Second,    // Wait for connection from pool

@@ -46,6 +46,8 @@ post_install do |installer|
         '$(inherited)',
         'PERMISSION_CAMERA=1',
       ]
+      # Fix deployment target for all pods
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end
   end
 end

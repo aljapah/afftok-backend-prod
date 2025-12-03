@@ -11,6 +11,7 @@ import Offers from "./pages/Offers";
 import Networks from "./pages/Networks";
 import Teams from "./pages/Teams";
 import Badges from "./pages/Badges";
+import Contests from "./pages/Contests";
 import UserDetails from "./pages/UserDetails";
 import Analytics from "./pages/Analytics";
 // Phase 10: New Admin Pages
@@ -32,6 +33,7 @@ function Router() {
       <Route path={"/networks"} component={Networks} />
       <Route path={"/teams"} component={Teams} />
       <Route path={"/badges"} component={Badges} />
+      <Route path={"/contests"} component={Contests} />
       <Route path={"/analytics"} component={Analytics} />
       {/* Phase 10: System Pages */}
       <Route path={"/monitoring"} component={Monitoring} />

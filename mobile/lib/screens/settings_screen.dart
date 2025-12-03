@@ -9,6 +9,7 @@ import 'privacy_screen.dart';
 import 'security_screen.dart';
 import 'terms_screen.dart';
 import 'about_screen.dart';
+import 'role_selection_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -440,9 +441,13 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
 
   void _showLogoutDialog(BuildContext context) {
     final lang = AppLocalizations.of(context)!;
+    // Save references BEFORE dialog
+    final navigator = Navigator.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1a1a1a),
         title: Text(
           lang.logout,
@@ -454,17 +459,24 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
               lang.cancel,
               style: const TextStyle(color: Colors.white70),
             ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(lang.loggedOut)),
+            onPressed: () async {
+              // Close dialog first
+              Navigator.pop(dialogContext);
+              
+              // Perform actual logout
+              await authProvider.logout();
+              
+              // Navigate to role selection screen and clear all previous routes
+              navigator.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+                (route) => false,
               );
             },
             child: Text(

@@ -183,6 +183,25 @@ export const appRouter = router({
         const { deleteOffer } = await import("./db");
         return deleteOffer(input.id);
       }),
+    approve: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { approveOffer } = await import("./db");
+        return approveOffer(input.id);
+      }),
+    reject: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ 
+          id: z.string(),
+          reason: z.string().optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { rejectOffer } = await import("./db");
+        return rejectOffer(input.id, input.reason);
+      }),
   }),
   
   teams: router({
@@ -273,6 +292,97 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { deleteBadge } = await import("./db");
         return deleteBadge(input.id);
+      }),
+  }),
+
+  // ============ CONTESTS / المسابقات ============
+  contests: router({
+    list: publicProcedure.query(async () => {
+      const { getAllContests } = await import("./db");
+      return getAllContests();
+    }),
+    create: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          title: z.string().min(1),
+          titleAr: z.string().optional().nullable(),
+          description: z.string().optional().nullable(),
+          descriptionAr: z.string().optional().nullable(),
+          imageUrl: z.string().optional().nullable(),
+          prizeTitle: z.string().optional().nullable(),
+          prizeTitleAr: z.string().optional().nullable(),
+          prizeDescription: z.string().optional().nullable(),
+          prizeAmount: z.number().min(0).optional(),
+          prizeCurrency: z.string().optional(),
+          contestType: z.enum(['individual', 'team']).optional(),
+          targetType: z.enum(['clicks', 'conversions', 'referrals', 'points']).optional(),
+          targetValue: z.number().int().min(1).optional(),
+          minClicks: z.number().int().min(0).optional(),
+          minConversions: z.number().int().min(0).optional(),
+          minMembers: z.number().int().min(1).optional(),
+          maxParticipants: z.number().int().min(0).optional(),
+          startDate: z.string(),
+          endDate: z.string(),
+          status: z.enum(['draft', 'active', 'ended', 'cancelled']).optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { createContest } = await import("./db");
+        return createContest(input);
+      }),
+    update: publicProcedure
+      .input((input: unknown) => {
+        return z.object({
+          id: z.string(),
+          title: z.string().min(1).optional(),
+          titleAr: z.string().optional().nullable(),
+          description: z.string().optional().nullable(),
+          descriptionAr: z.string().optional().nullable(),
+          imageUrl: z.string().optional().nullable(),
+          prizeTitle: z.string().optional().nullable(),
+          prizeTitleAr: z.string().optional().nullable(),
+          prizeDescription: z.string().optional().nullable(),
+          prizeAmount: z.number().min(0).optional(),
+          prizeCurrency: z.string().optional(),
+          contestType: z.enum(['individual', 'team']).optional(),
+          targetType: z.enum(['clicks', 'conversions', 'referrals', 'points']).optional(),
+          targetValue: z.number().int().min(1).optional(),
+          minClicks: z.number().int().min(0).optional(),
+          minConversions: z.number().int().min(0).optional(),
+          minMembers: z.number().int().min(1).optional(),
+          maxParticipants: z.number().int().min(0).optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          status: z.enum(['draft', 'active', 'ended', 'cancelled']).optional(),
+        }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { updateContest } = await import("./db");
+        return updateContest(input);
+      }),
+    delete: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { deleteContest } = await import("./db");
+        return deleteContest(input.id);
+      }),
+    activate: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { activateContest } = await import("./db");
+        return activateContest(input.id);
+      }),
+    end: publicProcedure
+      .input((input: unknown) => {
+        return z.object({ id: z.string() }).parse(input);
+      })
+      .mutation(async ({ input }) => {
+        const { endContest } = await import("./db");
+        return endContest(input.id);
       }),
   }),
 });

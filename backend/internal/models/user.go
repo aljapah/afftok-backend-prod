@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// AfftokUser represents an affiliate marketer
+// AfftokUser represents an affiliate marketer or advertiser
 type AfftokUser struct {
 	ID               uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	Username         string    `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
@@ -15,7 +15,7 @@ type AfftokUser struct {
 	FullName         string    `gorm:"type:varchar(100)" json:"full_name,omitempty"`
 	AvatarURL        string    `gorm:"type:text" json:"avatar_url,omitempty"`
 	Bio              string    `gorm:"type:text" json:"bio,omitempty"`
-	Role             string    `gorm:"type:varchar(20);default:'user'" json:"role"`
+	Role             string    `gorm:"type:varchar(20);default:'promoter'" json:"role"` // promoter or advertiser
 	Status           string    `gorm:"type:varchar(20);default:'active'" json:"status"`
 	Points           int       `gorm:"default:0" json:"points"`
 	Level            int       `gorm:"default:1" json:"level"`
@@ -25,10 +25,17 @@ type AfftokUser struct {
 	CreatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 
+	// Advertiser-specific fields (only used when Role = "advertiser")
+	CompanyName string `gorm:"type:varchar(100)" json:"company_name,omitempty"`
+	Phone       string `gorm:"type:varchar(30)" json:"phone,omitempty"`
+	Website     string `gorm:"type:text" json:"website,omitempty"`
+	Country     string `gorm:"type:varchar(50)" json:"country,omitempty"`
+
 	// Relationships
-	UserOffers []UserOffer  `gorm:"foreignKey:UserID" json:"user_offers,omitempty"`
-	TeamMember *TeamMember  `gorm:"foreignKey:UserID" json:"team_member,omitempty"`
-	UserBadges []UserBadge  `gorm:"foreignKey:UserID" json:"user_badges,omitempty"`
+	UserOffers       []UserOffer `gorm:"foreignKey:UserID" json:"user_offers,omitempty"`
+	TeamMember       *TeamMember `gorm:"foreignKey:UserID" json:"team_member,omitempty"`
+	UserBadges       []UserBadge `gorm:"foreignKey:UserID" json:"user_badges,omitempty"`
+	AdvertiserOffers []Offer     `gorm:"foreignKey:AdvertiserID" json:"advertiser_offers,omitempty"` // Offers created by this advertiser
 }
 
 // TableName specifies the table name

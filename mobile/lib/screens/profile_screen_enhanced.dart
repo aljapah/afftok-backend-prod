@@ -13,6 +13,9 @@ import 'teams_screen.dart';
 import 'home_feed_screen.dart';
 import 'webview_screen.dart';
 import 'promoter_public_page.dart';
+import 'ai_assistant_screen.dart';
+import 'advertiser/advertiser_dashboard_screen.dart';
+import 'role_selection_screen.dart';
 
 class WebViewPage extends StatelessWidget {
   final String url;
@@ -51,8 +54,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   
   Future<void> _refreshData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    // Always refresh data when entering profile screen
-    await authProvider.loadCurrentUser(forceRefresh: true);
+    // Only refresh if logged in
+    if (authProvider.isLoggedIn) {
+      await authProvider.loadCurrentUser(forceRefresh: true);
+    }
   }
 
   @override
@@ -61,9 +66,25 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
     
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
+        // If not logged in, redirect to role selection
+        if (!authProvider.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+              (route) => false,
+            );
+          });
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        
         final user = authProvider.currentUser;
         
-        if (user == null) {
+        // If user is null and still loading, show loading indicator
+        if (user == null && authProvider.isLoading) {
           return Scaffold(
             backgroundColor: Colors.black,
             appBar: AppBar(
@@ -73,6 +94,33 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             body: const Center(
               child: CircularProgressIndicator(),
             ),
+          );
+        }
+        
+        // If user is null and not loading, go back
+        if (user == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          });
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        // If user is advertiser, redirect to advertiser dashboard
+        if (user.isAdvertiser) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AdvertiserDashboardScreen()),
+            );
+          });
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
         
@@ -93,6 +141,51 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               IconButton(
                 icon: const Icon(Icons.refresh, color: Colors.white),
                 onPressed: () => _refreshData(),
+              ),
+              // AI Assistant button - Glowing Orb with AffTok colors
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AIAssistantScreen()),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const RadialGradient(
+                      colors: [
+                        Color(0xFFFFFFFF),
+                        Color(0xFFFF8A80),
+                        Color(0xFFE53935),
+                        Color(0xFFFF006E),
+                      ],
+                      stops: [0.0, 0.3, 0.6, 1.0],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFE53935).withOpacity(0.6),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                      ),
+                      BoxShadow(
+                        color: const Color(0xFFFF006E).withOpacity(0.4),
+                        blurRadius: 20,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.auto_awesome,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white),

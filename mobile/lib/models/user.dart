@@ -6,10 +6,16 @@ class User {
   final String? phone;
   final String? avatarUrl;
   final String? bio;
+  final String role; // 'promoter' or 'advertiser'
   final UserLevel level;
   final UserStats stats;
   final String? teamId;
   final DateTime createdAt;
+  
+  // Advertiser-specific fields
+  final String? companyName;
+  final String? website;
+  final String? country;
 
   User({
     required this.id,
@@ -19,11 +25,19 @@ class User {
     this.phone,
     this.avatarUrl,
     this.bio,
+    this.role = 'promoter',
     required this.level,
     required this.stats,
     this.teamId,
     required this.createdAt,
+    this.companyName,
+    this.website,
+    this.country,
   });
+  
+  // Check if user is advertiser by role OR has company name
+  bool get isAdvertiser => role == 'advertiser' || (companyName != null && companyName!.isNotEmpty);
+  bool get isPromoter => !isAdvertiser;
 
   /// Factory that handles both nested stats and separate stats object
   /// Backend returns: { user: {...}, stats: {...} }
@@ -46,7 +60,10 @@ class User {
     }
     
     // Build stats from external stats object or nested stats
-    final statsData = externalStats ?? json['stats'] ?? {};
+    final rawStatsData = externalStats ?? json['stats'] ?? {};
+    final statsData = rawStatsData is Map<String, dynamic> 
+        ? rawStatsData 
+        : Map<String, dynamic>.from(rawStatsData);
     
     return User(
       id: json['id']?.toString() ?? '',
@@ -56,12 +73,17 @@ class User {
       phone: json['phone'],
       avatarUrl: json['avatar_url'] ?? json['avatarUrl'],
       bio: json['bio'],
+      role: json['role'] ?? 'promoter',
       level: userLevel,
       stats: UserStats.fromJson(statsData),
       teamId: json['team_id'] ?? json['teamId'],
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      // Advertiser fields
+      companyName: json['company_name'] ?? json['companyName'],
+      website: json['website'],
+      country: json['country'],
     );
   }
   

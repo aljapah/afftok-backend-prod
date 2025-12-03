@@ -8,7 +8,9 @@ import '../providers/auth_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({Key? key}) : super(key: key);
+  final bool isNewUser;
+  
+  const SignInScreen({Key? key, this.isNewUser = false}) : super(key: key);
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -68,9 +70,10 @@ class _SignInScreenState extends State<SignInScreen> {
             
             if (mounted) {
               await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
-              Navigator.pushReplacement(
+              Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
+                (route) => false, // Remove all previous routes
               );
             }
           } catch (e) {
@@ -124,9 +127,10 @@ class _SignInScreenState extends State<SignInScreen> {
         
         if (mounted) {
           await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
+            (route) => false, // Remove all previous routes
           );
         }
       } catch (e) {
@@ -156,9 +160,10 @@ class _SignInScreenState extends State<SignInScreen> {
       await _authService.googleSignIn();
       if (mounted) {
         await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
+          (route) => false, // Remove all previous routes
         );
       }
     } catch (e) {
