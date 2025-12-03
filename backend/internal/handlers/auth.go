@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
+	"github.com/aljapah/afftok-backend-prod/internal/services"
 	"github.com/aljapah/afftok-backend-prod/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,7 +17,8 @@ import (
 )
 
 type AuthHandler struct {
-	db *gorm.DB
+	db                   *gorm.DB
+	observabilityService *services.ObservabilityService
 }
 
 type GoogleClaims struct {
@@ -26,7 +28,10 @@ type GoogleClaims struct {
 }
 
 func NewAuthHandler(db *gorm.DB) *AuthHandler {
-	return &AuthHandler{db: db}
+	return &AuthHandler{
+		db:                   db,
+		observabilityService: services.NewObservabilityService(),
+	}
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -39,8 +44,22 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
+	}
+	
+	// Security: Additional input validation
+	if len(req.Username) > 50 || len(req.Email) > 255 || len(req.Password) > 100 || len(req.FullName) > 100 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input too long"})
+		return
+	}
+	
+	// Security: Username format validation (alphanumeric and underscore only)
+	for _, r := range req.Username {
+		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_') {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Username can only contain letters, numbers, and underscores"})
+			return
+		}
 	}
 
 	var existingUser models.AfftokUser
@@ -91,6 +110,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user.PasswordHash = ""
 
+	// Log successful registration
+	h.observabilityService.LogAuth(user.ID.String(), user.Username, c.ClientIP(), "register", true, "")
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message":       "User registered successfully",
 		"user":          user,
@@ -113,16 +135,19 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	var user models.AfftokUser
 	if err := h.db.Where("username = ? OR email = ?", req.Username, req.Username).First(&user).Error; err != nil {
+		h.observabilityService.LogAuth("", req.Username, c.ClientIP(), "login", false, "user_not_found")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	if user.Status == "suspended" {
+		h.observabilityService.LogAuth(user.ID.String(), user.Username, c.ClientIP(), "login", false, "account_suspended")
 		c.JSON(http.StatusForbidden, gin.H{"error": "Account is suspended"})
 		return
 	}
 
 	if !utils.CheckPassword(user.PasswordHash, req.Password) {
+		h.observabilityService.LogAuth(user.ID.String(), user.Username, c.ClientIP(), "login", false, "invalid_password")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -140,6 +165,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	user.PasswordHash = ""
+
+	// Log successful login
+	h.observabilityService.LogAuth(user.ID.String(), user.Username, c.ClientIP(), "login", true, "")
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "Login successful",
@@ -312,12 +340,20 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 
 	user.PasswordHash = ""
 
+	// Get monthly stats
+	monthlyClicks := 0
+	monthlyConversions := 0
+	// TODO: Calculate from clicks/conversions tables with date filter
+
 	stats := gin.H{
-		"total_clicks": totalClicks,
-		"total_conversions": totalConversions,
+		"total_clicks":            totalClicks,
+		"total_conversions":       totalConversions,
+		"total_earnings":          user.TotalEarnings,
 		"total_registered_offers": totalOffers,
-		"global_rank": globalRank,
-		"conversion_rate": conversionRate,
+		"monthly_clicks":          monthlyClicks,
+		"monthly_conversions":     monthlyConversions,
+		"global_rank":             globalRank,
+		"conversion_rate":         conversionRate,
 	}
 
 	c.JSON(http.StatusOK, gin.H{

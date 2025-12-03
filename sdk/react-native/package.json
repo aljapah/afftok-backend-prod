@@ -1,0 +1,44 @@
+{
+  "name": "@afftok/react-native-sdk",
+  "version": "1.0.0",
+  "description": "Official React Native SDK for AffTok affiliate tracking platform",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/afftok/react-native-sdk.git"
+  },
+  "keywords": [
+    "afftok",
+    "affiliate",
+    "tracking",
+    "react-native",
+    "sdk",
+    "analytics",
+    "conversion",
+    "click"
+  ],
+  "author": "AffTok <support@afftok.com>",
+  "license": "MIT",
+  "homepage": "https://afftok.com",
+  "bugs": {
+    "url": "https://github.com/afftok/react-native-sdk/issues"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.60.0"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.19.0",
+    "crypto-js": "^4.1.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-native": "^0.72.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+

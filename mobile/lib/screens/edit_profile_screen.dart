@@ -15,8 +15,6 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   bool _loading = false;
   File? _selectedImage;
@@ -34,8 +32,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() {
       _nameController.text = user.fullName;
-      _emailController.text = user.email;
-      _phoneController.text = user.phone ?? '';
+      _bioController.text = user.bio ?? '';
     });
   }
 
@@ -60,31 +57,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _loading = true);
 
     try {
+      bool imageSuccess = true;
+      bool profileSuccess = true;
+      
+      // Upload image first if selected
       if (_selectedImage != null) {
-        await authProvider.uploadProfileImage(_selectedImage!.path);
+        print('[EditProfile] Uploading image...');
+        imageSuccess = await authProvider.uploadProfileImage(_selectedImage!.path);
+        print('[EditProfile] Image upload result: $imageSuccess');
       }
       
-      final success = await authProvider.updateProfile(
+      // Update profile data
+      print('[EditProfile] Updating profile data...');
+      profileSuccess = await authProvider.updateProfile(
         fullName: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
+        bio: _bioController.text.trim(),
       );
+      print('[EditProfile] Profile update result: $profileSuccess');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.green.shade700,
-            content: const Text('Profile updated successfully'),
-          ),
-        );
-        Navigator.pop(context);
+        if (imageSuccess && profileSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: Color(0xFF8E2DE2),
+              content: Text('تم تحديث الملف الشخصي بنجاح'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: Color(0xFF8E2DE2),
+              content: Text('تم الحفظ'),
+            ),
+          );
+        }
+        Navigator.pop(context, true); // Return true to indicate changes were made
       }
     } catch (e) {
+      print('[EditProfile] Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.red.shade700,
-            content: const Text('An error occurred'),
+            content: Text('حدث خطأ: $e'),
           ),
         );
       }
@@ -115,89 +130,110 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               padding: const EdgeInsets.all(20),
               child: ListView(
                 children: [
-                  Center(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF006E), Color(0xFFFF4D00)],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFF006E).withOpacity(0.5),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(3),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.black,
-                            ),
-                            child: Container(
+                  Consumer<AuthProvider>(
+                    builder: (context, authProvider, child) {
+                      final user = authProvider.user;
+                      final currentAvatarUrl = user?.avatarUrl;
+                      
+                      return Center(
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 120,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.grey[800],
-                              ),
-                              child: _selectedImage != null
-                                  ? ClipOval(
-                                      child: Image.file(
-                                        _selectedImage!,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  : const Icon(
-                                      Icons.person,
-                                      size: 50,
-                                      color: Colors.white,
-                                    ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: -5,
-                          right: -5,
-                          child: GestureDetector(
-                            onTap: _pickImage,
-                            child: Container(
-                              decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFFFF006E), Color(0xFFFF4D00)],
                                 ),
-                                shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
                                     color: const Color(0xFFFF006E).withOpacity(0.5),
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
                                   ),
                                 ],
                               ),
-                              padding: const EdgeInsets.all(10),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 20,
+                              padding: const EdgeInsets.all(3),
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.black,
+                                ),
+                                child: ClipOval(
+                                  child: Container(
+                                    width: 114,
+                                    height: 114,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.grey[800],
+                                    ),
+                                    child: _selectedImage != null
+                                        ? Image.file(
+                                            _selectedImage!,
+                                            fit: BoxFit.cover,
+                                            width: 114,
+                                            height: 114,
+                                          )
+                                        : (currentAvatarUrl != null && currentAvatarUrl.isNotEmpty)
+                                            ? Image.network(
+                                                currentAvatarUrl,
+                                                fit: BoxFit.cover,
+                                                width: 114,
+                                                height: 114,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return const Icon(
+                                                    Icons.person,
+                                                    size: 50,
+                                                    color: Colors.white,
+                                                  );
+                                                },
+                                              )
+                                            : const Icon(
+                                                Icons.person,
+                                                size: 50,
+                                                color: Colors.white,
+                                              ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Positioned(
+                              bottom: -5,
+                              right: -5,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFFFF006E), Color(0xFFFF4D00)],
+                                    ),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFF006E).withOpacity(0.5),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 30),
                   _buildTextField(label: lang.fullName, controller: _nameController),
-                  const SizedBox(height: 20),
-                  _buildTextField(label: lang.email, controller: _emailController),
-                  const SizedBox(height: 20),
-                  _buildTextField(label: 'Phone', controller: _phoneController),
                   const SizedBox(height: 20),
                   _buildTextField(label: 'Bio', controller: _bioController, maxLines: 3),
                   const SizedBox(height: 40),
@@ -316,8 +352,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
     _bioController.dispose();
     super.dispose();
   }

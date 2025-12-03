@@ -66,8 +66,14 @@ export const offers = pgTable("offers", {
   id: uuid("id").primaryKey().defaultRandom(),
   networkId: uuid("network_id"),
   externalOfferId: varchar("external_offer_id", { length: 100 }),
+  // English Fields
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
+  // Arabic Fields (للمستخدم العربي)
+  titleAr: varchar("title_ar", { length: 255 }),
+  descriptionAr: text("description_ar"),
+  termsAr: text("terms_ar"),
+  // Common Fields
   imageUrl: text("image_url"),
   logoUrl: text("logo_url"),
   destinationUrl: text("destination_url").notNull(),

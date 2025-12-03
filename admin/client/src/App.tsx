@@ -13,6 +13,13 @@ import Teams from "./pages/Teams";
 import Badges from "./pages/Badges";
 import UserDetails from "./pages/UserDetails";
 import Analytics from "./pages/Analytics";
+// Phase 10: New Admin Pages
+import Monitoring from "./pages/Monitoring";
+import Tenants from "./pages/Tenants";
+import GeoRules from "./pages/GeoRules";
+import FraudDetection from "./pages/FraudDetection";
+import LogsViewer from "./pages/LogsViewer";
+import Webhooks from "./pages/Webhooks";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -26,6 +33,13 @@ function Router() {
       <Route path={"/teams"} component={Teams} />
       <Route path={"/badges"} component={Badges} />
       <Route path={"/analytics"} component={Analytics} />
+      {/* Phase 10: System Pages */}
+      <Route path={"/monitoring"} component={Monitoring} />
+      <Route path={"/tenants"} component={Tenants} />
+      <Route path={"/geo-rules"} component={GeoRules} />
+      <Route path={"/fraud"} component={FraudDetection} />
+      <Route path={"/logs"} component={LogsViewer} />
+      <Route path={"/webhooks"} component={Webhooks} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

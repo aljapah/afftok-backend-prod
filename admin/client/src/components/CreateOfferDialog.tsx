@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Plus } from "lucide-react";
+import { Plus, Globe, Languages } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -22,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 
 export function CreateOfferDialog() {
@@ -29,6 +35,9 @@ export function CreateOfferDialog() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    titleAr: "",
+    descriptionAr: "",
+    termsAr: "",
     imageUrl: "",
     destinationUrl: "",
     category: "",
@@ -45,6 +54,9 @@ export function CreateOfferDialog() {
       setFormData({
         title: "",
         description: "",
+        titleAr: "",
+        descriptionAr: "",
+        termsAr: "",
         imageUrl: "",
         destinationUrl: "",
         category: "",
@@ -70,7 +82,7 @@ export function CreateOfferDialog() {
           Create Offer
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Create New Offer</DialogTitle>
@@ -78,24 +90,84 @@ export function CreateOfferDialog() {
               Add a new offer to the platform. Fill in all required fields.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
+          
+          <Tabs defaultValue="english" className="mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="english" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                English
+              </TabsTrigger>
+              <TabsTrigger value="arabic" className="flex items-center gap-2">
+                <Languages className="h-4 w-4" />
+                العربية
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* English Tab */}
+            <TabsContent value="english" className="space-y-4 mt-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Enter offer title in English"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter offer description in English"
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+            
+            {/* Arabic Tab */}
+            <TabsContent value="arabic" className="space-y-4 mt-4" dir="rtl">
+              <div className="grid gap-2">
+                <Label htmlFor="titleAr" className="text-right">العنوان بالعربي</Label>
+                <Input
+                  id="titleAr"
+                  value={formData.titleAr}
+                  onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
+                  placeholder="أدخل عنوان العرض بالعربي"
+                  className="text-right"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="descriptionAr" className="text-right">الوصف بالعربي</Label>
+                <Textarea
+                  id="descriptionAr"
+                  value={formData.descriptionAr}
+                  onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
+                  placeholder="أدخل وصف العرض بالعربي"
+                  className="text-right"
+                  rows={3}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="termsAr" className="text-right">الشروط والأحكام</Label>
+                <Textarea
+                  id="termsAr"
+                  value={formData.termsAr}
+                  onChange={(e) => setFormData({ ...formData, termsAr: e.target.value })}
+                  placeholder="أدخل شروط وأحكام العرض بالعربي"
+                  className="text-right"
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          {/* Common Fields */}
+          <div className="grid gap-4 py-4 border-t mt-4 pt-4">
+            <h4 className="text-sm font-medium text-muted-foreground">Common Settings</h4>
+            
             <div className="grid gap-2">
               <Label htmlFor="imageUrl">Image URL</Label>
               <Input
@@ -103,6 +175,7 @@ export function CreateOfferDialog() {
                 type="url"
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="https://example.com/image.png"
               />
             </div>
             <div className="grid gap-2">
@@ -112,6 +185,7 @@ export function CreateOfferDialog() {
                 type="url"
                 value={formData.destinationUrl}
                 onChange={(e) => setFormData({ ...formData, destinationUrl: e.target.value })}
+                placeholder="https://example.com/offer"
                 required
               />
             </div>
@@ -158,6 +232,7 @@ export function CreateOfferDialog() {
               </div>
             </div>
           </div>
+          
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel

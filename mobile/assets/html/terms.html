@@ -27,6 +27,9 @@
 
         html {
             scroll-behavior: smooth;
+            height: auto !important;
+            overflow: auto !important;
+            -webkit-overflow-scrolling: touch;
         }
 
         body {
@@ -35,6 +38,11 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            height: auto !important;
+            overflow-y: auto !important;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
         }
 
         body.en {
@@ -136,6 +144,9 @@
 
         .content {
             padding: 50px 0;
+            max-height: none !important;
+            overflow: visible !important;
+            height: auto !important;
         }
 
         .section {
@@ -168,6 +179,9 @@
             border-radius: 12px;
             padding: 28px;
             margin-bottom: 20px;
+            max-height: none !important;
+            overflow: visible !important;
+            height: auto !important;
         }
 
         .section-content p {
@@ -308,7 +322,7 @@
     <div class="page-header">
         <div class="container">
             <h1 class="page-title" id="page-title">شروط الاستخدام</h1>
-            <p class="page-subtitle" id="last-update">آخر تحديث: نوفمبر 2025</p>
+
         </div>
     </div>
 
@@ -402,7 +416,7 @@
         const translations = {
             ar: {
                 'page-title': 'شروط الاستخدام',
-                'last-update': 'آخر تحديث: نوفمبر 2025',
+
                 'back-btn': '← العودة',
                 'lang-btn': 'English',
                 'warning-text': 'تنويه مهم: جميع الخدمات في هذا التطبيق مجانية وليس بها أي رسوم ظاهرة أو مخفية',
@@ -467,6 +481,19 @@
         };
 
         let currentLang = 'ar';
+        
+        // Fix scrolling immediately on page load
+        window.addEventListener('load', () => {
+            document.body.style.overflow = 'visible';
+            document.body.style.height = 'auto';
+            document.documentElement.style.overflow = 'visible';
+            document.documentElement.style.height = 'auto';
+        });
+        
+        // Ensure scrolling works in WebView
+        if (document.body.scrollHeight > window.innerHeight) {
+            document.body.style.overflowY = 'auto';
+        }
 
         function toggleLanguage() {
             currentLang = currentLang === 'ar' ? 'en' : 'ar';
@@ -498,6 +525,26 @@
             if (savedLang !== currentLang) {
                 toggleLanguage();
             }
+            
+            // Fix scrolling issue
+            document.body.style.overflow = 'visible';
+            document.body.style.height = 'auto';
+            document.documentElement.style.overflow = 'visible';
+            document.documentElement.style.height = 'auto';
+            
+            const content = document.querySelector('.content');
+            if (content) {
+                content.style.maxHeight = 'none';
+                content.style.overflow = 'visible';
+                content.style.height = 'auto';
+            }
+            
+            const sections = document.querySelectorAll('.section-content');
+            sections.forEach(section => {
+                section.style.maxHeight = 'none';
+                section.style.overflow = 'visible';
+                section.style.height = 'auto';
+            });
         });
     </script>
 </body>

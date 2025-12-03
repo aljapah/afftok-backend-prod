@@ -1,8 +1,123 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_localizations.dart';
 
-class PrivacyScreen extends StatelessWidget {
+class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({Key? key}) : super(key: key);
+
+  @override
+  State<PrivacyScreen> createState() => _PrivacyScreenState();
+}
+
+class _PrivacyScreenState extends State<PrivacyScreen> {
+  WebViewController? _webViewController;
+  bool _isLoading = true;
+  bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _initializeWebView();
+    }
+  }
+
+  void _initializeWebView() async {
+    final lang = AppLocalizations.of(context);
+    final isArabic = lang.locale.languageCode == 'ar';
+    
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            // Handle mailto links
+            if (request.url.startsWith('mailto:')) {
+              _launchEmail(request.url);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageFinished: (_) {
+            // Hide elements and set language
+            _hideAppElements();
+            _setLanguage(isArabic);
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          },
+        ),
+      );
+
+    try {
+      final htmlContent = await rootBundle.loadString('assets/html/privacy.html');
+      _webViewController?.loadHtmlString(
+        htmlContent,
+        baseUrl: 'https://afftok.com/',
+      );
+    } catch (e) {
+      print('[PrivacyScreen] Error loading HTML: $e');
+    }
+  }
+
+  void _hideAppElements() {
+    _webViewController?.runJavaScript("""
+      var langBtn = document.querySelector('.language-toggle');
+      if (langBtn) langBtn.style.display = 'none';
+      var backBtn = document.querySelector('.back-btn');
+      if (backBtn) backBtn.style.display = 'none';
+      var footerSection = document.querySelector('.footer-section');
+      if (footerSection) footerSection.style.display = 'none';
+      var footer = document.querySelector('footer');
+      if (footer) footer.style.display = 'none';
+    """);
+  }
+
+  void _setLanguage(bool isArabic) {
+    final targetLang = isArabic ? 'ar' : 'en';
+    _webViewController?.runJavaScript("""
+      var html = document.documentElement;
+      var body = document.body;
+      var targetLang = '$targetLang';
+      
+      if (targetLang === 'en') {
+        html.lang = 'en';
+        html.dir = 'ltr';
+        body.classList.add('en');
+        body.classList.remove('ar');
+      } else {
+        html.lang = 'ar';
+        html.dir = 'rtl';
+        body.classList.remove('en');
+        body.classList.add('ar');
+      }
+      
+      // Use the page's built-in translations
+      if (typeof translations !== 'undefined' && translations[targetLang]) {
+        currentLang = targetLang;
+        Object.keys(translations[targetLang]).forEach(function(key) {
+          var element = document.getElementById(key);
+          if (element) {
+            element.innerHTML = translations[targetLang][key];
+          }
+        });
+      }
+    """);
+  }
+
+  Future<void> _launchEmail(String emailUrl) async {
+    try {
+      final Uri uri = Uri.parse(emailUrl);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      print('[PrivacyScreen] Error launching email: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,55 +127,28 @@ class PrivacyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
         title: Text(
           isArabic ? 'سياسة الخصوصية' : 'Privacy Policy',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 22,
+            fontSize: 20,
           ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Text(
-            isArabic
-                ? '''
-نحن في تطبيق AffTok نحرص على حماية خصوصية المستخدمين وسرية بياناتهم.
-
-يتم جمع المعلومات الأساسية مثل البريد الإلكتروني أو الاسم فقط لتحسين تجربة المستخدم وتقديم العروض المناسبة.
-
-لا نقوم ببيع أو مشاركة أي بيانات مع أطراف خارجية دون إذن المستخدم، ونستخدم تقنيات تشفير متقدمة لحماية بياناتك.
-
-يمكنك في أي وقت طلب حذف بياناتك أو تعطيل حسابك نهائيًا من خلال التواصل مع فريق الدعم.
-
-نلتزم بجميع معايير الخصوصية المعتمدة لضمان أمان وسرية بياناتك بشكل كامل.
-'''
-                : '''
-At AffTok, we are committed to protecting our users’ privacy and keeping their information secure.
-
-We collect only essential data, such as name or email, to improve user experience and provide relevant offers.
-
-We never sell or share personal information with third parties without consent, and we use advanced encryption technologies to protect your data.
-
-You can request to delete your data or deactivate your account at any time by contacting our support team.
-
-We strictly comply with international privacy standards to ensure the highest level of data protection.
-''',
-            style: const TextStyle(
-              color: Colors.white70,
-              height: 1.7,
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
+      body: Stack(
+        children: [
+          if (_webViewController != null)
+            WebViewWidget(controller: _webViewController!),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFFFF006E)),
             ),
-            textAlign: isArabic ? TextAlign.right : TextAlign.left,
-          ),
-        ),
+        ],
       ),
     );
   }

@@ -8,7 +8,6 @@ import '../models/user.dart';
 import '../models/user_offer.dart';
 import '../models/team.dart';
 import '../providers/auth_provider.dart';
-import '../models/offer.dart';
 import 'settings_screen.dart';
 import 'teams_screen.dart';
 import 'home_feed_screen.dart';
@@ -46,12 +45,14 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      if (authProvider.currentUser != null) {
-        return;
-      }
-      authProvider.loadCurrentUser();
+      _refreshData();
     });
+  }
+  
+  Future<void> _refreshData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    // Always refresh data when entering profile screen
+    await authProvider.loadCurrentUser(forceRefresh: true);
   }
 
   @override
@@ -88,6 +89,11 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
+              // Refresh button
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: () => _refreshData(),
+              ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white),
                 onPressed: () {
@@ -99,37 +105,43 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
               ),
             ],
           ),
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: 24),
-                
-                // Profile Header
-                _buildProfileHeader(context, user, lang),
-                
-                const SizedBox(height: 24),
-                
-                // Personal Link Card
-                _buildPersonalLinkCard(context, user, lang),
-                
-                const SizedBox(height: 24),
-                
-                // Stats Cards
-                _buildStatsCards(context, user, lang),
-                
-                const SizedBox(height: 24),
-                
-                // Team Section (if in team)
-                if (user.isInTeam) ...[
-                  _buildTeamSection(context, lang),
+          body: RefreshIndicator(
+            onRefresh: _refreshData,
+            color: const Color(0xFFFF006E),
+            backgroundColor: Colors.grey[900],
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
                   const SizedBox(height: 24),
+                  
+                  // Profile Header
+                  _buildProfileHeader(context, user, lang),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Personal Link Card
+                  _buildPersonalLinkCard(context, user, lang),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Stats Cards
+                  _buildStatsCards(context, user, lang),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Team Section (if in team)
+                  if (user.isInTeam) ...[
+                    _buildTeamSection(context, lang),
+                    const SizedBox(height: 24),
+                  ],
+                  
+                  // Active Offers
+                  _buildActiveOffers(context, user, lang),
+                  
+                  const SizedBox(height: 32),
                 ],
-                
-                // Active Offers
-                _buildActiveOffers(context, user, lang),
-                
-                const SizedBox(height: 32),
-              ],
+              ),
             ),
           ),
         );
@@ -260,6 +272,24 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
             fontSize: 14,
           ),
         ),
+        
+        // Bio (if exists)
+        if (user.bio != null && user.bio!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              user.bio!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 13,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
         
         const SizedBox(height: 8),
         
@@ -770,11 +800,9 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   }
 
   Widget _buildUserOfferCard(UserOffer userOffer) {
-    final allOffers = Offer.getSampleOffers();
-    final offer = allOffers.firstWhere(
-      (o) => o.id == userOffer.offerId,
-      orElse: () => allOffers.first,
-    );
+    // Use offer info from the backend response, fallback to title
+    final offerTitle = userOffer.offerInfo?.title ?? userOffer.offerTitle;
+    final offerLogo = userOffer.offerInfo?.logoUrl;
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -789,15 +817,34 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            offer.companyName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              if (offerLogo != null && offerLogo.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    offerLogo,
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  offerTitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

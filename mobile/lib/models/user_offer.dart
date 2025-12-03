@@ -1,21 +1,28 @@
 // Model for tracking offers added by users
+// Updated to support new secure tracking links from backend
 class UserOffer {
   final String id;
   final String userId;
   final String offerId;
   final String userReferralLink; // The user's unique referral link for this offer
+  final String? shortLink; // Short tracking code for sharing
+  final String? trackingUrl; // Full tracking URL for clicks
   final DateTime addedAt;
   final UserOfferStats stats;
   final bool isActive;
+  final OfferInfo? offerInfo; // Nested offer details from backend
 
   UserOffer({
     required this.id,
     required this.userId,
     required this.offerId,
     required this.userReferralLink,
+    this.shortLink,
+    this.trackingUrl,
     required this.addedAt,
     required this.stats,
     this.isActive = true,
+    this.offerInfo,
   });
 
   // Calculate conversion rate
@@ -27,22 +34,138 @@ class UserOffer {
   // Getters for compatibility
   int get clicks => stats.clicks;
   int get conversions => stats.conversions;
-  double get earnings => 0.0; // Earnings removed
+  double get earnings => stats.earnings;
   String get affiliateLink => userReferralLink;
   int get totalClicks => stats.clicks;
   int get totalConversions => stats.conversions;
   
-  // fromJson factory
+  // Get the best link to share (prefer short link if available)
+  String get shareableLink => shortLink ?? userReferralLink;
+  
+  // Get full tracking URL for clicks
+  String get fullTrackingUrl => trackingUrl ?? '/api/c/$offerId?promoter=$userId';
+  
+  // Get offer title from nested offer or fallback
+  String get offerTitle => offerInfo?.title ?? 'Offer';
+  String get offerLogoUrl => offerInfo?.logoUrl ?? '';
+  String get offerCategory => offerInfo?.category ?? '';
+  String get offerImageUrl => offerInfo?.imageUrl ?? '';
+  
+  // fromJson factory - handles backend response structure
+  // Backend returns: { id, user_id, offer_id, affiliate_link, short_link, status, joined_at, offer: {...}, stats: {...} }
   factory UserOffer.fromJson(Map<String, dynamic> json) {
+    final offerData = json['offer'] as Map<String, dynamic>?;
+    
+    // Parse status to boolean
+    final status = json['status']?.toString().toLowerCase();
+    final isActive = status == 'active' || status == null;
+    
+    // Build stats from response - check both nested stats and direct fields
+    final statsData = json['stats'] as Map<String, dynamic>? ?? {};
+    
+    // Also check for direct click/conversion counts (backend sends both)
+    if (statsData.isEmpty) {
+      // Try to get from direct fields
+      final directClicks = json['total_clicks'] ?? 0;
+      final directConversions = json['total_conversions'] ?? 0;
+      if (directClicks > 0 || directConversions > 0) {
+        statsData['clicks'] = directClicks;
+        statsData['conversions'] = directConversions;
+      }
+    }
+    
     return UserOffer(
-      id: json['id'] ?? '',
-      userId: json['user_id'] ?? json['userId'] ?? '',
-      offerId: json['offer_id'] ?? json['offerId'] ?? '',
-      userReferralLink: json['user_referral_link'] ?? json['userReferralLink'] ?? json['affiliate_link'] ?? '',
-      addedAt: json['added_at'] != null ? DateTime.parse(json['added_at']) : DateTime.now(),
-      stats: UserOfferStats.fromJson(json['stats'] ?? {}),
-      isActive: json['is_active'] ?? json['isActive'] ?? true,
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? json['userId']?.toString() ?? '',
+      offerId: json['offer_id']?.toString() ?? json['offerId']?.toString() ?? offerData?['id']?.toString() ?? '',
+      userReferralLink: json['affiliate_link'] ?? json['user_referral_link'] ?? json['userReferralLink'] ?? '',
+      shortLink: json['short_link']?.toString(),
+      trackingUrl: json['tracking_url']?.toString(),
+      addedAt: _parseDateTime(json['joined_at'] ?? json['added_at']),
+      stats: UserOfferStats.fromJson(statsData),
+      isActive: isActive,
+      offerInfo: offerData != null ? OfferInfo.fromJson(offerData) : null,
     );
+  }
+  
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+    return DateTime.now();
+  }
+  
+  // Copy with method for state updates
+  UserOffer copyWith({
+    String? id,
+    String? userId,
+    String? offerId,
+    String? userReferralLink,
+    String? shortLink,
+    String? trackingUrl,
+    DateTime? addedAt,
+    UserOfferStats? stats,
+    bool? isActive,
+    OfferInfo? offerInfo,
+  }) {
+    return UserOffer(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      offerId: offerId ?? this.offerId,
+      userReferralLink: userReferralLink ?? this.userReferralLink,
+      shortLink: shortLink ?? this.shortLink,
+      trackingUrl: trackingUrl ?? this.trackingUrl,
+      addedAt: addedAt ?? this.addedAt,
+      stats: stats ?? this.stats,
+      isActive: isActive ?? this.isActive,
+      offerInfo: offerInfo ?? this.offerInfo,
+    );
+  }
+}
+
+// Lightweight offer info from nested offer in UserOffer response
+class OfferInfo {
+  final String id;
+  final String title;
+  final String? description;
+  final String? logoUrl;
+  final String? imageUrl;
+  final String? category;
+  final int totalClicks;
+  final int totalConversions;
+
+  OfferInfo({
+    required this.id,
+    required this.title,
+    this.description,
+    this.logoUrl,
+    this.imageUrl,
+    this.category,
+    this.totalClicks = 0,
+    this.totalConversions = 0,
+  });
+
+  factory OfferInfo.fromJson(Map<String, dynamic> json) {
+    return OfferInfo(
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? 'Offer',
+      description: json['description'],
+      logoUrl: json['logo_url'],
+      imageUrl: json['image_url'],
+      category: json['category'],
+      totalClicks: _parseIntSafe(json['total_clicks']),
+      totalConversions: _parseIntSafe(json['total_conversions']),
+    );
+  }
+  
+  static int _parseIntSafe(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }
 
@@ -63,25 +186,40 @@ class UserOfferStats {
   
   factory UserOfferStats.fromJson(Map<String, dynamic> json) {
     return UserOfferStats(
-      clicks: json['clicks'] ?? 0,
-      conversions: json['conversions'] ?? 0,
-      shares: json['shares'] ?? 0,
-      lastActivity: json['last_activity'] != null ? DateTime.parse(json['last_activity']) : DateTime.now(),
+      clicks: _parseIntSafe(json['clicks']),
+      conversions: _parseIntSafe(json['conversions']),
+      shares: _parseIntSafe(json['shares']),
+      lastActivity: _parseDateTime(json['last_activity']),
     );
+  }
+  
+  static int _parseIntSafe(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+  
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is DateTime) return value;
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+    return DateTime.now();
   }
 
   // Copy with method for updating stats
   UserOfferStats copyWith({
     int? clicks,
     int? conversions,
-    // double? earnings, // ❌ تم إزالته
     int? shares,
     DateTime? lastActivity,
   }) {
     return UserOfferStats(
       clicks: clicks ?? this.clicks,
       conversions: conversions ?? this.conversions,
-      // earnings: earnings ?? this.earnings, // ❌ تم إزالته
       shares: shares ?? this.shares,
       lastActivity: lastActivity ?? this.lastActivity,
     );

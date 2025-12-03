@@ -30,19 +30,32 @@ class Team {
 
   // Factory constructor to parse from API response
   factory Team.fromJson(Map<String, dynamic> json) {
+    final totalPoints = json['total_points'] ?? 0;
+    final totalClicks = json['total_clicks'] ?? 0;
+    final totalConversions = json['total_conversions'] ?? 0;
+    final memberCount = json['member_count'] ?? 0;
+    
     return Team(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       logoUrl: json['logo_url'],
       description: json['description'],
-      rank: _parseRank(json['total_points'] ?? 0),
+      rank: _parseRank(totalPoints),
       members: (json['members'] as List<dynamic>?)
               ?.map((m) => TeamMember.fromJson(m))
               .toList() ??
           [],
-      stats: TeamStats.fromJson(json['stats'] ?? {}),
+      stats: TeamStats(
+        totalPoints: totalPoints,
+        totalClicks: totalClicks,
+        totalConversions: totalConversions,
+        memberCount: memberCount,
+        totalReferrals: totalClicks,
+      ),
       maxMembers: json['max_members'] ?? 10,
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : DateTime.now(),
     );
   }
 
@@ -122,39 +135,56 @@ extension TeamRankExtension on TeamRank {
 }
 
 class TeamMember {
+  final String id;
+  final String teamId;
   final String userId;
   final String username;
   final String displayName;
   final String? avatarUrl;
-  final bool isLeader;
+  final String role;
+  final int points;
   final int referrals;
   final int conversions;
   final int teamRank;
   final DateTime joinedAt;
 
   TeamMember({
+    required this.id,
+    required this.teamId,
     required this.userId,
     required this.username,
     required this.displayName,
     this.avatarUrl,
-    this.isLeader = false,
-    required this.referrals,
-    required this.conversions,
-    required this.teamRank,
+    required this.role,
+    this.points = 0,
+    this.referrals = 0,
+    this.conversions = 0,
+    this.teamRank = 0,
     required this.joinedAt,
   });
 
+  bool get isLeader => role == 'owner';
+  bool get isAdmin => role == 'admin' || role == 'owner';
+
   factory TeamMember.fromJson(Map<String, dynamic> json) {
+    // Handle nested user object from backend
+    final userJson = json['user'] as Map<String, dynamic>? ?? {};
+    
     return TeamMember(
-      userId: json['user_id'] ?? '',
-      username: json['username'] ?? '',
-      displayName: json['display_name'] ?? json['full_name'] ?? '',
-      avatarUrl: json['avatar_url'],
-      isLeader: json['role'] == 'owner' || json['role'] == 'leader',
-      referrals: json['referrals'] ?? 0,
-      conversions: json['conversions'] ?? 0,
+      id: json['id']?.toString() ?? '',
+      teamId: json['team_id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? userJson['id']?.toString() ?? '',
+      username: userJson['username'] ?? json['username'] ?? '',
+      displayName: userJson['full_name'] ?? userJson['display_name'] ?? json['display_name'] ?? '',
+      avatarUrl: userJson['avatar_url'] ?? json['avatar_url'],
+      role: json['role'] ?? 'member',
+      points: json['points'] ?? 0,
+      referrals: userJson['total_clicks'] ?? json['referrals'] ?? 0,
+      conversions: userJson['total_conversions'] ?? json['conversions'] ?? 0,
       teamRank: json['team_rank'] ?? 0,
-      joinedAt: DateTime.parse(json['joined_at'] ?? DateTime.now().toIso8601String()),
+      joinedAt: json['joined_at'] != null 
+          ? DateTime.parse(json['joined_at']) 
+          : DateTime.now(),
     );
   }
 }
@@ -163,6 +193,8 @@ class TeamStats {
   final int totalReferrals;
   final int totalClicks;
   final int totalConversions;
+  final int totalPoints;
+  final int memberCount;
   final int monthlyReferrals;
   final int monthlyConversions;
   final int globalRank;
@@ -170,14 +202,16 @@ class TeamStats {
   final int goalTarget;
 
   TeamStats({
-    required this.totalReferrals,
-    required this.totalClicks,
-    required this.totalConversions,
-    required this.monthlyReferrals,
-    required this.monthlyConversions,
-    required this.globalRank,
-    required this.goalProgress,
-    required this.goalTarget,
+    this.totalReferrals = 0,
+    this.totalClicks = 0,
+    this.totalConversions = 0,
+    this.totalPoints = 0,
+    this.memberCount = 0,
+    this.monthlyReferrals = 0,
+    this.monthlyConversions = 0,
+    this.globalRank = 0,
+    this.goalProgress = 0,
+    this.goalTarget = 100,
   });
 
   double get goalPercentage => goalTarget > 0 ? (goalProgress / goalTarget * 100).clamp(0, 100) : 0;
@@ -189,9 +223,11 @@ class TeamStats {
 
   factory TeamStats.fromJson(Map<String, dynamic> json) {
     return TeamStats(
-      totalReferrals: json['total_referrals'] ?? 0,
+      totalReferrals: json['total_referrals'] ?? json['total_clicks'] ?? 0,
       totalClicks: json['total_clicks'] ?? 0,
       totalConversions: json['total_conversions'] ?? 0,
+      totalPoints: json['total_points'] ?? 0,
+      memberCount: json['member_count'] ?? 0,
       monthlyReferrals: json['monthly_referrals'] ?? 0,
       monthlyConversions: json['monthly_conversions'] ?? 0,
       globalRank: json['global_rank'] ?? 0,
@@ -264,151 +300,3 @@ class TeamChallenge {
   }
 }
 
-// Sample team data
-final sampleTeam = Team(
-  id: 'team_cryptokings',
-  name: 'CryptoKings',
-  description: 'Top crypto affiliate team',
-  rank: TeamRank.gold,
-  members: [
-    TeamMember(
-      userId: 'user_001',
-      username: 'abomohammed',
-      displayName: 'Abo Mohammed',
-      isLeader: true,
-      referrals: 45,
-      conversions: 35,
-      teamRank: 1,
-      joinedAt: DateTime(2024, 6, 15),
-    ),
-    TeamMember(
-      userId: 'user_002',
-      username: 'ahmedali',
-      displayName: 'Ahmed Ali',
-      referrals: 38,
-      conversions: 30,
-      teamRank: 2,
-      joinedAt: DateTime(2024, 6, 20),
-    ),
-    TeamMember(
-      userId: 'user_003',
-      username: 'sarakhan',
-      displayName: 'Sara Khan',
-      referrals: 32,
-      conversions: 28,
-      teamRank: 3,
-      joinedAt: DateTime(2024, 7, 1),
-    ),
-    TeamMember(
-      userId: 'user_004',
-      username: 'mohammed',
-      displayName: 'Mohammed',
-      referrals: 28,
-      conversions: 22,
-      teamRank: 4,
-      joinedAt: DateTime(2024, 7, 5),
-    ),
-    TeamMember(
-      userId: 'user_005',
-      username: 'fatima',
-      displayName: 'Fatima',
-      referrals: 25,
-      conversions: 20,
-      teamRank: 5,
-      joinedAt: DateTime(2024, 7, 10),
-    ),
-    TeamMember(
-      userId: 'user_006',
-      username: 'omar',
-      displayName: 'Omar',
-      referrals: 22,
-      conversions: 18,
-      teamRank: 6,
-      joinedAt: DateTime(2024, 7, 15),
-    ),
-    TeamMember(
-      userId: 'user_007',
-      username: 'layla',
-      displayName: 'Layla',
-      referrals: 18,
-      conversions: 15,
-      teamRank: 7,
-      joinedAt: DateTime(2024, 8, 1),
-    ),
-    TeamMember(
-      userId: 'user_008',
-      username: 'khalid',
-      displayName: 'Khalid',
-      referrals: 15,
-      conversions: 12,
-      teamRank: 8,
-      joinedAt: DateTime(2024, 8, 10),
-    ),
-  ],
-  stats: TeamStats(
-    totalReferrals: 450,
-    totalClicks: 5200,
-    totalConversions: 180,
-    monthlyReferrals: 180,
-    monthlyConversions: 65,
-    globalRank: 3,
-    goalProgress: 180,
-    goalTarget: 300,
-  ),
-  createdAt: DateTime(2024, 6, 15),
-);
-
-// Sample leaderboard data
-final topTeams = [
-  Team(
-    id: 'team_001',
-    name: 'AffiliateKings',
-    rank: TeamRank.diamond,
-    members: [],
-    stats: TeamStats(
-      totalReferrals: 850,
-      totalClicks: 9500,
-      totalConversions: 420,
-      monthlyReferrals: 320,
-      monthlyConversions: 150,
-      globalRank: 1,
-      goalProgress: 420,
-      goalTarget: 500,
-    ),
-    createdAt: DateTime(2024, 5, 1),
-  ),
-  Team(
-    id: 'team_002',
-    name: 'MarketMasters',
-    rank: TeamRank.platinum,
-    members: [],
-    stats: TeamStats(
-      totalReferrals: 720,
-      totalClicks: 8200,
-      totalConversions: 310,
-      monthlyReferrals: 280,
-      monthlyConversions: 120,
-      globalRank: 2,
-      goalProgress: 310,
-      goalTarget: 400,
-    ),
-    createdAt: DateTime(2024, 5, 10),
-  ),
-  sampleTeam,
-];
-
-// Sample active challenge
-final activeChallenge = TeamChallenge(
-  id: 'challenge_001',
-  title: 'Binance Special Campaign',
-  description: 'First 3 teams to reach 100 referrals win \$1,000 bonus each!',
-  companyName: 'Binance',
-  companyLogo: 'https://logo.clearbit.com/binance.com',
-  reward: 1000.0,
-  targetReferrals: 100,
-  startDate: DateTime(2024, 10, 1 ),
-  endDate: DateTime(2024, 10, 20),
-  currentProgress: 67,
-  currentRank: 2,
-  totalTeams: 45,
-);

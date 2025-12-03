@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:afftok/utils/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({Key? key}) : super(key: key);
 
-  void _launchURL(String url) async {
-    print('Attempting to launch URL: $url');
+  Future<void> _launchURL(String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      print('Error launching URL: $e');
+    }
   }
 
   @override
@@ -103,8 +109,8 @@ class AboutScreen extends StatelessWidget {
             _buildContactLink(
               icon: FontAwesomeIcons.tiktok,
               title: 'afftok_app',
-              url: 'https://tiktok.com/@afftok_app',
-              onTap: () => _launchURL('https://tiktok.com/@afftok_app'),
+              url: 'https://www.tiktok.com/@afftok_app',
+              onTap: () => _launchURL('https://www.tiktok.com/@afftok_app'),
             ),
             
             _buildContactLink(

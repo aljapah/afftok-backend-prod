@@ -51,6 +51,9 @@ class ApiService {
     
     if (includeAuth && _accessToken != null) {
       headers['Authorization'] = 'Bearer $_accessToken';
+      print('[ApiService] Sending Authorization: Bearer ${_accessToken?.substring(0, 50)}...');
+    } else if (includeAuth && _accessToken == null) {
+      print('[ApiService] WARNING: includeAuth=true but _accessToken is null');
     }
     
     return headers;
@@ -165,6 +168,7 @@ class ApiService {
   }
 
   // Get current user
+  // Backend returns: { success: true, user: {...}, stats: {...} }
   Future<Map<String, dynamic>> getMe() async {
     try {
       final response = await http.get(
@@ -180,11 +184,26 @@ class ApiService {
       }
 
       final data = jsonDecode(response.body);
+      print('[ApiService] getMe response: $data');
 
       if (response.statusCode == 200) {
+        // Backend sends stats as a separate object, not nested in user
+        final userData = data['user'] as Map<String, dynamic>?;
+        final statsData = data['stats'] as Map<String, dynamic>?;
+        
+        if (userData == null) {
+          return {
+            'success': false,
+            'error': 'User data not found in response',
+          };
+        }
+        
+        // Pass external stats to User.fromJson
+        final user = User.fromJson(userData, externalStats: statsData);
+        
         return {
           'success': true,
-          'user': data['user'] != null ? User.fromJson(data['user']) : null,
+          'user': user,
         };
       } else {
         return {
@@ -193,6 +212,7 @@ class ApiService {
         };
       }
     } catch (e) {
+      print('[ApiService] getMe error: $e');
       return {
         'success': false,
         'error': 'Network error: ${e.toString()}',
@@ -214,12 +234,12 @@ class ApiService {
     }
   }
 
-  // Generic GET request
-  Future<Map<String, dynamic>> get(String endpoint) async {
+  // Generic GET request without auth
+  Future<Map<String, dynamic>> getPublic(String endpoint) async {
     try {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}$endpoint'),
-        headers: _getHeaders(includeAuth: true),
+        headers: _getHeaders(includeAuth: false),
       ).timeout(const Duration(seconds: 30));
 
       if (response.body.isEmpty) {
@@ -248,6 +268,58 @@ class ApiService {
         'error': 'Network error: ${e.toString()}',
       };
     }
+  }
+
+  // Generic GET request
+  Future<Map<String, dynamic>> get(String endpoint, {int retries = 3}) async {
+    int attempt = 0;
+    while (attempt < retries) {
+      try {
+        final response = await http.get(
+          Uri.parse('${ApiConfig.baseUrl}$endpoint'),
+          headers: _getHeaders(includeAuth: true),
+        ).timeout(const Duration(seconds: 30));
+
+        if (response.body.isEmpty) {
+          return {
+            'success': false,
+            'error': 'Empty response from server',
+          };
+        }
+
+        final data = jsonDecode(response.body);
+
+        if (response.statusCode == 200) {
+          return {
+            'success': true,
+            'data': data,
+          };
+        } else if (response.statusCode == 401 && attempt < retries - 1) {
+          attempt++;
+          await Future.delayed(Duration(milliseconds: 200 * attempt));
+          continue;
+        } else {
+          return {
+            'success': false,
+            'error': data['error'] ?? 'Request failed',
+          };
+        }
+      } catch (e) {
+        if (attempt < retries - 1) {
+          attempt++;
+          await Future.delayed(Duration(milliseconds: 200 * attempt));
+          continue;
+        }
+        return {
+          'success': false,
+          'error': 'Network error: ${e.toString()}',
+        };
+      }
+    }
+    return {
+      'success': false,
+      'error': 'Request failed after $retries attempts',
+    };
   }
 
   // Generic PUT request

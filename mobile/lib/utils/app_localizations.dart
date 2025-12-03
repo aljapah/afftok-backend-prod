@@ -196,6 +196,29 @@ class AppLocalizations {
       'joinTeam': 'Join Team',
       'noTeamYet': 'You are not in a team yet',
       'joinCreateTeam': 'Join or create a team to compete and perform together!',
+      'joinOrCreateTeam': 'Join an existing team or create your own to collaborate with others!',
+      'browseTeams': 'Browse Teams',
+      'teamName': 'Team Name',
+      'teamStats': 'Team Statistics',
+      'members': 'Members',
+      'points': 'Points',
+      'noMembersYet': 'No members yet',
+      'leaveTeam': 'Leave Team',
+      'confirmLeaveTeam': 'Are you sure you want to leave this team?',
+      'confirmJoinTeam': 'Do you want to join team',
+      'teamCreatedSuccessfully': 'Team created successfully!',
+      'failedToCreateTeam': 'Failed to create team',
+      'joinedTeamSuccessfully': 'Joined team successfully!',
+      'failedToJoinTeam': 'Failed to join team',
+      'leftTeamSuccessfully': 'Left team successfully!',
+      'failedToLeaveTeam': 'Failed to leave team',
+      'noTeamsYet': 'No teams available yet',
+      'createFirstTeam': 'Be the first to create a team!',
+      'full': 'Full',
+      'join': 'Join',
+      'leave': 'Leave',
+      'create': 'Create',
+      'cancel': 'Cancel',
       
       // Enhanced Profile
       'personalLink': 'Personal Link',
@@ -227,6 +250,11 @@ class AppLocalizations {
       'conversions': 'Conversions',
       'addOffer': 'Add Offer',
       'analytics': 'Analytics',
+      'offerAddedSuccessfully': 'Offer added successfully!',
+      'failedToAddOffer': 'Failed to add offer. Please try again.',
+      'addOfferToMyList': 'Add to My Offers',
+      'offerAdded': 'Offer Added ✓',
+      'offerAlreadyAdded': 'Offer already added to your list',
       'conversionRate': 'Conversion Rate',
       'totalConversions': 'Total Conversions',
       'youWillEarn': 'Partner Reward',
@@ -646,6 +674,29 @@ class AppLocalizations {
       'joinTeam': 'الانضمام لفريق',
       'noTeamYet': 'أنت لست في أي فريق بعد',
       'joinCreateTeam': 'انضم أو أنشئ فريقًا للمنافسة والأداء معًا!',
+      'joinOrCreateTeam': 'انضم لفريق موجود أو أنشئ فريقك الخاص للتعاون مع الآخرين!',
+      'browseTeams': 'تصفح الفرق',
+      'teamName': 'اسم الفريق',
+      'teamStats': 'إحصائيات الفريق',
+      'members': 'الأعضاء',
+      'points': 'النقاط',
+      'noMembersYet': 'لا يوجد أعضاء بعد',
+      'leaveTeam': 'مغادرة الفريق',
+      'confirmLeaveTeam': 'هل أنت متأكد أنك تريد مغادرة هذا الفريق؟',
+      'confirmJoinTeam': 'هل تريد الانضمام للفريق',
+      'teamCreatedSuccessfully': 'تم إنشاء الفريق بنجاح!',
+      'failedToCreateTeam': 'فشل في إنشاء الفريق',
+      'joinedTeamSuccessfully': 'تم الانضمام للفريق بنجاح!',
+      'failedToJoinTeam': 'فشل في الانضمام للفريق',
+      'leftTeamSuccessfully': 'تمت مغادرة الفريق بنجاح!',
+      'failedToLeaveTeam': 'فشل في مغادرة الفريق',
+      'noTeamsYet': 'لا توجد فرق متاحة حالياً',
+      'createFirstTeam': 'كن أول من ينشئ فريقاً!',
+      'full': 'مكتمل',
+      'join': 'انضمام',
+      'leave': 'مغادرة',
+      'create': 'إنشاء',
+      'cancel': 'إلغاء',
       
       // Enhanced Profile
       'personalLink': 'الرابط الشخصي',
@@ -680,6 +731,11 @@ class AppLocalizations {
       'conversionRate': 'معدل التحويل',
       'totalConversions': 'إجمالي التحويلات',
       'youWillEarn': 'مكافأة الشريك',
+      'offerAddedSuccessfully': 'تمت إضافة العرض بنجاح!',
+      'failedToAddOffer': 'فشل في إضافة العرض. حاول مرة أخرى.',
+      'addOfferToMyList': 'إضافة لعروضي',
+      'offerAdded': 'تمت الإضافة ✓',
+      'offerAlreadyAdded': 'العرض مضاف مسبقاً لقائمتك',
       'aboutThisOffer': 'حول هذا العرض',
       'usersEarned': 'المستخدمون الذين حققوا',
       'rating': 'التقييم',
@@ -1102,6 +1158,28 @@ class AppLocalizations {
   String get joinTeam => translate('joinTeam');
   String get noTeamYet => translate('noTeamYet');
   String get joinCreateTeam => translate('joinCreateTeam');
+  String get joinOrCreateTeam => translate('joinOrCreateTeam');
+  String get browseTeams => translate('browseTeams');
+  String get teamName => translate('teamName');
+  String get teamStats => translate('teamStats');
+  String get points => translate('points');
+  String get noMembersYet => translate('noMembersYet');
+  String get leaveTeam => translate('leaveTeam');
+  String get confirmLeaveTeam => translate('confirmLeaveTeam');
+  String get confirmJoinTeam => translate('confirmJoinTeam');
+  String get teamCreatedSuccessfully => translate('teamCreatedSuccessfully');
+  String get failedToCreateTeam => translate('failedToCreateTeam');
+  String get joinedTeamSuccessfully => translate('joinedTeamSuccessfully');
+  String get failedToJoinTeam => translate('failedToJoinTeam');
+  String get leftTeamSuccessfully => translate('leftTeamSuccessfully');
+  String get failedToLeaveTeam => translate('failedToLeaveTeam');
+  String get noTeamsYet => translate('noTeamsYet');
+  String get createFirstTeam => translate('createFirstTeam');
+  String get full => translate('full');
+  String get join => translate('join');
+  String get leave => translate('leave');
+  String get create => translate('create');
+  // cancel already defined above
   
   // Enhanced Profile
   String get personalLink => translate('personalLink');
@@ -1136,6 +1214,8 @@ class AppLocalizations {
   String get conversionRate => translate('conversionRate');
   String get totalConversions => translate('totalConversions');
   String get youWillEarn => translate('youWillEarn');
+  String get failedToAddOffer => translate('failedToAddOffer');
+  String get addOfferToMyList => translate('addOfferToMyList');
   String get aboutThisOffer => translate('aboutThisOffer');
   String get usersEarned => translate('usersEarned');
   String get rating => translate('rating');
@@ -1170,6 +1250,7 @@ class AppLocalizations {
   String get invalidLink => translate('invalidLink');
   String get linkStats => translate('linkStats');
   String get offerAdded => translate('offerAdded');
+  String get offerAlreadyAdded => translate('offerAlreadyAdded');
   String get offers => translate('offers');
   String get ok => translate('ok');
   String get redirectNotice => translate('redirectNotice');

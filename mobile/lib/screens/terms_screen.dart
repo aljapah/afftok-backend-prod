@@ -1,168 +1,153 @@
 import 'package:flutter/material.dart';
-import 'package:afftok/utils/app_localizations.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../utils/app_localizations.dart';
 
-class TermsScreen extends StatelessWidget {
+class TermsScreen extends StatefulWidget {
   const TermsScreen({Key? key}) : super(key: key);
+
+  @override
+  State<TermsScreen> createState() => _TermsScreenState();
+}
+
+class _TermsScreenState extends State<TermsScreen> {
+  WebViewController? _webViewController;
+  bool _isLoading = true;
+  bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _initializeWebView();
+    }
+  }
+
+  void _initializeWebView() async {
+    final lang = AppLocalizations.of(context);
+    final isArabic = lang.locale.languageCode == 'ar';
+    
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) {
+            // Handle mailto links
+            if (request.url.startsWith('mailto:')) {
+              _launchEmail(request.url);
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageFinished: (_) {
+            // Hide elements and set language
+            _hideAppElements();
+            _setLanguage(isArabic);
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          },
+        ),
+      );
+
+    try {
+      final htmlContent = await rootBundle.loadString('assets/html/terms.html');
+      _webViewController?.loadHtmlString(
+        htmlContent,
+        baseUrl: 'https://afftok.com/',
+      );
+    } catch (e) {
+      print('[TermsScreen] Error loading HTML: $e');
+    }
+  }
+
+  void _hideAppElements() {
+    _webViewController?.runJavaScript("""
+      var langBtn = document.querySelector('.language-toggle');
+      if (langBtn) langBtn.style.display = 'none';
+      var backBtn = document.querySelector('.back-btn');
+      if (backBtn) backBtn.style.display = 'none';
+      var footerSection = document.querySelector('.footer-section');
+      if (footerSection) footerSection.style.display = 'none';
+      var footer = document.querySelector('footer');
+      if (footer) footer.style.display = 'none';
+    """);
+  }
+
+  void _setLanguage(bool isArabic) {
+    final targetLang = isArabic ? 'ar' : 'en';
+    _webViewController?.runJavaScript("""
+      var html = document.documentElement;
+      var body = document.body;
+      var targetLang = '$targetLang';
+      
+      if (targetLang === 'en') {
+        html.lang = 'en';
+        html.dir = 'ltr';
+        body.classList.add('en');
+        body.classList.remove('ar');
+      } else {
+        html.lang = 'ar';
+        html.dir = 'rtl';
+        body.classList.remove('en');
+        body.classList.add('ar');
+      }
+      
+      // Use the page's built-in translations
+      if (typeof translations !== 'undefined' && translations[targetLang]) {
+        currentLang = targetLang;
+        Object.keys(translations[targetLang]).forEach(function(key) {
+          var element = document.getElementById(key);
+          if (element) {
+            element.innerHTML = translations[targetLang][key];
+          }
+        });
+      }
+    """);
+  }
+
+  Future<void> _launchEmail(String emailUrl) async {
+    try {
+      final Uri uri = Uri.parse(emailUrl);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      print('[TermsScreen] Error launching email: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context);
+    final isArabic = lang.locale.languageCode == 'ar';
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: Text(lang.termsScreenTitle),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+        elevation: 0,
+        title: Text(
+          isArabic ? 'شروط الاستخدام' : 'Terms of Use',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
         ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSection(lang.effectiveDate, isSubtitle: true),
-            const SizedBox(height: 20),
-            
-            _buildSection(lang.acceptanceOfTerms),
-            _buildText(lang.acceptanceOfTermsDesc),
-            
-            _buildSection(lang.descriptionOfService),
-            _buildText(lang.descriptionOfServiceDesc),
-            
-            _buildSection(lang.userAccounts),
-            _buildText(lang.accountRequirements),
-            _buildBullet(lang.ageRequirement),
-            _buildBullet(lang.validEmail),
-            _buildBullet(lang.complyLaws),
-            _buildBullet(lang.legitimateUse),
-            
-            _buildSection(lang.referralProgramRules),
-            _buildSubSection(lang.permittedActivities),
-            _buildBullet(lang.shareLinks),
-            _buildBullet(lang.promoteHonestly),
-            _buildBullet(lang.complyPartnerTerms),
-            
-            _buildSubSection(lang.prohibitedActivities),
-            _buildBullet(lang.noFakeAccounts),
-            _buildBullet(lang.noBots),
-            _buildBullet(lang.noSpamming),
-            _buildBullet(lang.noMisrepresentation),
-            _buildBullet(lang.noManipulation),
-            _buildBullet(lang.noFraud),
-            
-            _buildSection(lang.earningsPayments),
-            _buildText(lang.earningsDesc),
-            _buildText(lang.taxResponsibility),
-            
-            _buildSection(lang.intellectualProperty),
-            _buildText(lang.intellectualPropertyDesc),
-            
-            _buildSection(lang.thirdPartyServices),
-            _buildText(lang.thirdPartyServicesDesc),
-            
-            _buildSection(lang.disclaimers),
-            _buildText(lang.disclaimersDesc),
-            
-            _buildSection(lang.limitationOfLiability),
-            _buildText(lang.limitationOfLiabilityDesc),
-            
-            _buildSection(lang.changesToTerms),
-            _buildText(lang.changesToTermsDesc),
-            
-            _buildSection(lang.contactInformation),
-            _buildText(lang.contactInformationDesc),
-            _buildBullet(lang.emailLegal),
-            _buildBullet(lang.websiteTerms),
-            _buildBullet(lang.emailSupport),
-            
-            const SizedBox(height: 30),
-            Center(
-              child: Text(
-                lang.slogan,
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, {bool isSubtitle = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 10),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: isSubtitle ? 14 : 18,
-          fontWeight: FontWeight.bold,
-          color: isSubtitle ? Colors.white70 : Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubSection(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 12, bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildText(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.white70,
-          height: 1.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBullet(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          const Text(
-            '• ',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFFE91E63),
-              fontWeight: FontWeight.bold,
+          if (_webViewController != null)
+            WebViewWidget(controller: _webViewController!),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFFFF006E)),
             ),
-          ),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white70,
-                height: 1.5,
-              ),
-            ),
-          ),
         ],
       ),
     );

@@ -1,0 +1,177 @@
+import 'package:flutter/foundation.dart';
+import '../models/team.dart';
+import '../services/team_service.dart';
+
+class TeamProvider with ChangeNotifier {
+  final TeamService _teamService = TeamService();
+
+  List<Team> _teams = [];
+  Team? _currentTeam;
+  Team? _userTeam;
+  bool _isLoading = false;
+  String? _error;
+
+  List<Team> get teams => _teams;
+  Team? get currentTeam => _currentTeam;
+  Team? get userTeam => _userTeam;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  bool get isInTeam => _userTeam != null;
+
+  // Load all teams
+  Future<void> loadTeams() async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final result = await _teamService.getAllTeams();
+
+      if (result['success'] == true) {
+        _teams = result['teams'] as List<Team>;
+        print('[TeamProvider] Loaded ${_teams.length} teams');
+      } else {
+        _error = result['error'] as String?;
+        print('[TeamProvider] Error loading teams: $_error');
+      }
+    } catch (e) {
+      _error = e.toString();
+      print('[TeamProvider] Exception loading teams: $e');
+    }
+
+    _setLoading(false);
+  }
+
+  // Load specific team
+  Future<void> loadTeam(String teamId) async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final result = await _teamService.getTeam(teamId);
+
+      if (result['success'] == true) {
+        _currentTeam = result['team'] as Team;
+        print('[TeamProvider] Loaded team: ${_currentTeam?.name}');
+      } else {
+        _error = result['error'] as String?;
+      }
+    } catch (e) {
+      _error = e.toString();
+    }
+
+    _setLoading(false);
+  }
+
+  // Create a new team
+  Future<bool> createTeam({
+    required String name,
+    String? description,
+    String? logoUrl,
+    int maxMembers = 10,
+  }) async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final result = await _teamService.createTeam(
+        name: name,
+        description: description,
+        logoUrl: logoUrl,
+        maxMembers: maxMembers,
+      );
+
+      if (result['success'] == true) {
+        _userTeam = result['team'] as Team;
+        print('[TeamProvider] Created team: ${_userTeam?.name}');
+        await loadTeams(); // Refresh teams list
+        _setLoading(false);
+        return true;
+      } else {
+        _error = result['error'] as String?;
+        print('[TeamProvider] Failed to create team: $_error');
+      }
+    } catch (e) {
+      _error = e.toString();
+      print('[TeamProvider] Exception creating team: $e');
+    }
+
+    _setLoading(false);
+    return false;
+  }
+
+  // Join a team
+  Future<bool> joinTeam(String teamId) async {
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final result = await _teamService.joinTeam(teamId);
+
+      if (result['success'] == true) {
+        print('[TeamProvider] Joined team successfully');
+        await loadTeam(teamId);
+        _userTeam = _currentTeam;
+        await loadTeams(); // Refresh teams list
+        _setLoading(false);
+        return true;
+      } else {
+        _error = result['error'] as String?;
+        print('[TeamProvider] Failed to join team: $_error');
+      }
+    } catch (e) {
+      _error = e.toString();
+      print('[TeamProvider] Exception joining team: $e');
+    }
+
+    _setLoading(false);
+    return false;
+  }
+
+  // Leave current team
+  Future<bool> leaveTeam() async {
+    if (_userTeam == null) return false;
+
+    _setLoading(true);
+    _error = null;
+
+    try {
+      final result = await _teamService.leaveTeam(_userTeam!.id);
+
+      if (result['success'] == true) {
+        print('[TeamProvider] Left team successfully');
+        _userTeam = null;
+        _currentTeam = null;
+        await loadTeams(); // Refresh teams list
+        _setLoading(false);
+        return true;
+      } else {
+        _error = result['error'] as String?;
+        print('[TeamProvider] Failed to leave team: $_error');
+      }
+    } catch (e) {
+      _error = e.toString();
+      print('[TeamProvider] Exception leaving team: $e');
+    }
+
+    _setLoading(false);
+    return false;
+  }
+
+  // Set user's current team (from user data)
+  void setUserTeam(Team? team) {
+    _userTeam = team;
+    notifyListeners();
+  }
+
+  // Clear error
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+}
+

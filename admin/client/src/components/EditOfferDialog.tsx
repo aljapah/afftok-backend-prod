@@ -18,8 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { Globe, Languages } from "lucide-react";
 
 interface EditOfferDialogProps {
   offer: any;
@@ -30,6 +37,9 @@ interface EditOfferDialogProps {
 export function EditOfferDialog({ offer, open, onOpenChange }: EditOfferDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [titleAr, setTitleAr] = useState("");
+  const [descriptionAr, setDescriptionAr] = useState("");
+  const [termsAr, setTermsAr] = useState("");
   const [category, setCategory] = useState("");
   const [payout, setPayout] = useState("");
   const [targetUrl, setTargetUrl] = useState("");
@@ -53,9 +63,12 @@ export function EditOfferDialog({ offer, open, onOpenChange }: EditOfferDialogPr
     if (offer) {
       setTitle(offer.title || "");
       setDescription(offer.description || "");
+      setTitleAr(offer.titleAr || "");
+      setDescriptionAr(offer.descriptionAr || "");
+      setTermsAr(offer.termsAr || "");
       setCategory(offer.category || "");
       setPayout(offer.payout?.toString() || "");
-      setTargetUrl(offer.targetUrl || "");
+      setTargetUrl(offer.targetUrl || offer.destinationUrl || "");
       setImageUrl(offer.imageUrl || "");
       setRequirements(offer.requirements || "");
       setStatus(offer.status || "active");
@@ -80,6 +93,9 @@ export function EditOfferDialog({ offer, open, onOpenChange }: EditOfferDialogPr
       id: offer.id,
       title,
       description,
+      titleAr: titleAr || undefined,
+      descriptionAr: descriptionAr || undefined,
+      termsAr: termsAr || undefined,
       category,
       payout: payoutNum,
       destinationUrl: targetUrl,
@@ -90,7 +106,7 @@ export function EditOfferDialog({ offer, open, onOpenChange }: EditOfferDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Offer</DialogTitle>
           <DialogDescription>
@@ -98,29 +114,86 @@ export function EditOfferDialog({ offer, open, onOpenChange }: EditOfferDialogPr
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Get 50% off on Premium Subscription"
-                required
-              />
-            </div>
+          <Tabs defaultValue="english" className="mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="english" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                English
+              </TabsTrigger>
+              <TabsTrigger value="arabic" className="flex items-center gap-2">
+                <Languages className="h-4 w-4" />
+                العربية
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* English Tab */}
+            <TabsContent value="english" className="space-y-4 mt-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Get 50% off on Premium Subscription"
+                  required
+                />
+              </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Detailed description of the offer..."
-                rows={4}
-                required
-              />
-            </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Detailed description of the offer..."
+                  rows={4}
+                  required
+                />
+              </div>
+            </TabsContent>
+            
+            {/* Arabic Tab */}
+            <TabsContent value="arabic" className="space-y-4 mt-4" dir="rtl">
+              <div className="grid gap-2">
+                <Label htmlFor="titleAr" className="text-right">العنوان بالعربي</Label>
+                <Input
+                  id="titleAr"
+                  value={titleAr}
+                  onChange={(e) => setTitleAr(e.target.value)}
+                  placeholder="أدخل عنوان العرض بالعربي"
+                  className="text-right"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="descriptionAr" className="text-right">الوصف بالعربي</Label>
+                <Textarea
+                  id="descriptionAr"
+                  value={descriptionAr}
+                  onChange={(e) => setDescriptionAr(e.target.value)}
+                  placeholder="أدخل وصف العرض بالعربي"
+                  className="text-right"
+                  rows={4}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="termsAr" className="text-right">الشروط والأحكام</Label>
+                <Textarea
+                  id="termsAr"
+                  value={termsAr}
+                  onChange={(e) => setTermsAr(e.target.value)}
+                  placeholder="أدخل شروط وأحكام العرض بالعربي"
+                  className="text-right"
+                  rows={3}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          {/* Common Fields */}
+          <div className="grid gap-4 py-4 border-t mt-4 pt-4">
+            <h4 className="text-sm font-medium text-muted-foreground">Common Settings</h4>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
@@ -181,17 +254,6 @@ export function EditOfferDialog({ offer, open, onOpenChange }: EditOfferDialogPr
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="requirements">Requirements</Label>
-              <Textarea
-                id="requirements"
-                value={requirements}
-                onChange={(e) => setRequirements(e.target.value)}
-                placeholder="e.g., 18+, US only"
-                rows={2}
-              />
-            </div>
-
-            <div className="grid gap-2">
               <Label htmlFor="status">Status *</Label>
               <Select value={status} onValueChange={(value) => setStatus(value as "active" | "inactive" | "pending")} required>
                 <SelectTrigger>
@@ -200,6 +262,7 @@ export function EditOfferDialog({ offer, open, onOpenChange }: EditOfferDialogPr
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
                 </SelectContent>
               </Select>
             </div>

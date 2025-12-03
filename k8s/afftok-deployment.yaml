@@ -1,0 +1,205 @@
+# AffTok Backend Deployment
+# Production-ready Kubernetes deployment configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: afftok-backend
+  namespace: afftok
+  labels:
+    app: afftok-backend
+    version: v1
+    tier: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      app: afftok-backend
+  template:
+    metadata:
+      labels:
+        app: afftok-backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/api/internal/metrics"
+    spec:
+      serviceAccountName: afftok-backend
+      terminationGracePeriodSeconds: 60
+      
+      # Anti-affinity for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - afftok-backend
+                topologyKey: kubernetes.io/hostname
+      
+      containers:
+        - name: afftok-backend
+          image: afftok/backend:latest
+          imagePullPolicy: Always
+          
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          
+          # Environment variables
+          envFrom:
+            - configMapRef:
+                name: afftok-config
+            - secretRef:
+                name: afftok-secrets
+          
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: GOMAXPROCS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+          
+          # Resource limits
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          
+          # Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /api/internal/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
+          # Startup probe for slow starts
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          
+          # Lifecycle hooks
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 15"]
+          
+          # Volume mounts
+          volumeMounts:
+            - name: wal-storage
+              mountPath: /data/wal
+            - name: tmp
+              mountPath: /tmp
+      
+      volumes:
+        - name: wal-storage
+          persistentVolumeClaim:
+            claimName: afftok-wal-pvc
+        - name: tmp
+          emptyDir: {}
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: afftok-backend
+  namespace: afftok
+  labels:
+    app: afftok-backend
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: afftok-backend
+
+---
+# PVC for WAL storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: afftok-wal-pvc
+  namespace: afftok
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: fast-ssd
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: afftok-config
+  namespace: afftok
+data:
+  ENVIRONMENT: "production"
+  PORT: "8080"
+  LOG_LEVEL: "info"
+  LOG_MODE: "normal"
+  ZERO_DROP_ENABLED: "true"
+  ALLOW_LEGACY_TRACKING_CODES: "false"
+  GEO_ENFORCE_ON_POSTBACK: "true"
+  LINK_TTL_SECONDS: "86400"
+  
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: afftok-backend
+  namespace: afftok
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: afftok
+  labels:
+    name: afftok
+    istio-injection: enabled
+

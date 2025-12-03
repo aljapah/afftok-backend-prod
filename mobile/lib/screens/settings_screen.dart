@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../utils/app_localizations.dart';
 import '../providers/language_provider.dart';
+import '../providers/auth_provider.dart';
 import 'edit_profile_screen.dart';
 import 'privacy_screen.dart';
 import 'security_screen.dart';
@@ -88,11 +89,15 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                         icon: Icons.person_outline,
                         title: lang.editProfile,
                         subtitle: lang.changeNamePhoto,
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                           );
+                          // Refresh profile data if changes were made
+                          if (result == true && mounted) {
+                            Provider.of<AuthProvider>(context, listen: false).loadCurrentUser(forceRefresh: true);
+                          }
                         },
                       ),
                       

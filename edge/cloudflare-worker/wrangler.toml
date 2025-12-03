@@ -1,0 +1,48 @@
+name = "afftok-edge-router"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# KV Namespaces
+kv_namespaces = [
+  { binding = "ROUTING_CACHE", id = "your-kv-namespace-id" },
+  { binding = "OFFER_CACHE", id = "your-kv-namespace-id" },
+  { binding = "NONCE_CACHE", id = "your-kv-namespace-id" },
+  { binding = "CLICK_QUEUE", id = "your-kv-namespace-id" }
+]
+
+# Durable Objects (optional)
+# [[durable_objects.bindings]]
+# name = "CLICK_AGGREGATOR"
+# class_name = "ClickAggregator"
+
+# R2 Buckets (optional for logs)
+# [[r2_buckets]]
+# binding = "LOGS_BUCKET"
+# bucket_name = "afftok-edge-logs"
+
+# Environment Variables
+[vars]
+BACKEND_URL = "https://api.afftok.com"
+SIGNING_SECRET = "" # Set via wrangler secret
+LINK_TTL_SECONDS = "86400"
+ALLOW_LEGACY_CODES = "false"
+BOT_DETECTION_ENABLED = "true"
+GEO_RULES_ENABLED = "true"
+DEVICE_RULES_ENABLED = "true"
+FAILOVER_ENABLED = "true"
+BATCH_SIZE = "50"
+BATCH_INTERVAL_MS = "5000"
+
+# Production Environment
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# Staging Environment  
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+
+# Routes
+# routes = [
+#   { pattern = "track.afftok.com/c/*", zone_name = "afftok.com" }
+# ]
+

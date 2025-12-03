@@ -7,6 +7,8 @@ import 'utils/app_localizations.dart';
 import 'providers/language_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/offer_provider.dart';
+import 'providers/team_provider.dart';
+import 'providers/stats_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,8 @@ class AffTokApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => LanguageProvider()..setLocale(const Locale('ar', ''))),
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => OfferProvider()),
+        ChangeNotifierProvider(create: (_) => TeamProvider()),
+        ChangeNotifierProvider(create: (_) => StatsProvider()),
       ],
       child: Consumer<LanguageProvider>(
         builder: (context, languageProvider, child) {

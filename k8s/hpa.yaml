@@ -1,0 +1,208 @@
+# Horizontal Pod Autoscaler for AffTok Backend
+# Scales based on CPU, Memory, and custom metrics
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afftok-backend-hpa
+  namespace: afftok
+  labels:
+    app: afftok-backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: afftok-backend
+  
+  minReplicas: 3
+  maxReplicas: 50
+  
+  metrics:
+    # CPU utilization
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    
+    # Memory utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+    
+    # Requests per second (custom metric from Prometheus)
+    - type: Pods
+      pods:
+        metric:
+          name: http_requests_per_second
+        target:
+          type: AverageValue
+          averageValue: "1000"
+    
+    # Ingress latency (custom metric)
+    - type: Pods
+      pods:
+        metric:
+          name: http_request_duration_seconds_p99
+        target:
+          type: AverageValue
+          averageValue: "100m"  # 100ms
+    
+    # Redis latency (custom metric)
+    - type: External
+      external:
+        metric:
+          name: redis_latency_ms
+          selector:
+            matchLabels:
+              service: afftok-backend
+        target:
+          type: AverageValue
+          averageValue: "10"  # 10ms
+    
+    # DB connections (custom metric)
+    - type: External
+      external:
+        metric:
+          name: db_connections_active
+          selector:
+            matchLabels:
+              service: afftok-backend
+        target:
+          type: AverageValue
+          averageValue: "80"  # 80% of pool
+  
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # 5 minutes
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Min
+    
+    scaleUp:
+      stabilizationWindowSeconds: 30  # 30 seconds cooldown
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+      selectPolicy: Max
+
+---
+# HPA for Redis
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afftok-redis-hpa
+  namespace: afftok
+  labels:
+    app: afftok-redis
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: afftok-redis
+  
+  minReplicas: 3
+  maxReplicas: 10
+  
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    
+    # Redis operations per second
+    - type: Pods
+      pods:
+        metric:
+          name: redis_commands_per_second
+        target:
+          type: AverageValue
+          averageValue: "50000"
+  
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 300
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+
+---
+# HPA for Ingress Controller
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: afftok-ingress-hpa
+  namespace: ingress-nginx
+  labels:
+    app: ingress-nginx
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ingress-nginx-controller
+  
+  minReplicas: 2
+  maxReplicas: 20
+  
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+    
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 60
+    
+    # Nginx connections
+    - type: Pods
+      pods:
+        metric:
+          name: nginx_connections_active
+        target:
+          type: AverageValue
+          averageValue: "10000"
+  
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+    scaleUp:
+      stabilizationWindowSeconds: 15
+      policies:
+        - type: Percent
+          value: 200
+          periodSeconds: 15
+

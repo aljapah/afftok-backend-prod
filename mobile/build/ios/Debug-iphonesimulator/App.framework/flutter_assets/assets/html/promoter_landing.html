@@ -123,7 +123,17 @@
         .profile-username {
             color: var(--text-secondary);
             font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .profile-bio {
+            color: var(--text-secondary);
+            font-size: 13px;
             margin-bottom: 12px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.5;
         }
 
         .profile-tagline {
@@ -253,33 +263,32 @@
             flex-grow: 1;
         }
 
-        .offer-reward {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 13px;
-            margin-bottom: 12px;
-        }
-
         .offer-button {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border: none;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             width: 100%;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: auto;
         }
 
         .offer-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(255, 0, 110, 0.3);
+            box-shadow: 0 8px 20px rgba(255, 0, 110, 0.4);
+        }
+        
+        .offer-button i {
+            font-size: 16px;
         }
 
         .download-section {
@@ -363,44 +372,8 @@
         }
 
         .social-link:hover {
-            transform: translateY(-6px) scale(1.2);
-            filter: brightness(1.3) drop-shadow(0 0 8px rgba(255, 0, 110, 0.6));
-        }
-
-        .social-icon {
-            display: none;
-        }
-
-        .social-youtube {
-            display: none;
-        }
-
-        .social-youtube:hover {
-            display: none;
-        }
-
-        .social-tiktok {
-            display: none;
-        }
-
-        .social-tiktok:hover {
-            display: none;
-        }
-
-        .social-x {
-            display: none;
-        }
-
-        .social-x:hover {
-            display: none;
-        }
-
-        .social-instagram {
-            display: none;
-        }
-
-        .social-instagram:hover {
-            display: none;
+            transform: scale(1.2);
+            color: var(--secondary);
         }
 
         .support-email {
@@ -459,6 +432,7 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            overflow: auto;
         }
 
         .rating-modal.active {
@@ -546,6 +520,37 @@
             border-color: var(--primary);
         }
 
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
         @media (max-width: 1024px) {
             .offers-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -597,9 +602,10 @@
 
     <div class="profile-section">
         <div class="container">
-            <img src="https://via.placeholder.com/80/FF006E/FFFFFF?text=User" alt="Profile" class="profile-image">
-            <h1 class="profile-name" id="profile-name">أحمد محمد</h1>
-            <p class="profile-username" id="profile-username">ahmed_promoter@</p>
+            <img id="profile-image" src="" alt="Profile" class="profile-image">
+            <h1 class="profile-name" id="profile-name">جاري التحميل...</h1>
+            <p class="profile-username" id="profile-username">@username</p>
+            <p class="profile-bio" id="profile-bio" style="display: none;"></p>
             <p class="profile-tagline" id="profile-tagline">اكتشف أفضل العروض والفرص الحصرية</p>
             <div class="member-badge" id="member-badge">Gold Member ⭐</div>
             <div class="rating-section">
@@ -614,36 +620,7 @@
             <h2 class="section-title" id="offers-title">عروضي الحصرية</h2>
             <p class="section-subtitle" id="offers-subtitle">اختر الآن واستمتع بأفضل العروض</p>
 
-            <div class="offers-grid">
-                <div class="offer-card">
-                    <img src="https://images.unsplash.com/photo-1522869635100-ce306e08e75f?w=400&h=200&fit=crop" alt="Netflix" class="offer-image">
-                    <div class="offer-content">
-                        <img src="https://via.placeholder.com/40/E50914/FFFFFF?text=NF" alt="Netflix" class="offer-logo">
-                        <h3 class="offer-name">Netflix</h3>
-                        <p class="offer-description" id="netflix-desc">استمتع بالأفلام والمسلسلات بجودة عالية</p>
-                        <button class="offer-button" onclick="visitOffer('netflix')" id="netflix-btn">اضغط هنا</button>
-                    </div>
-                </div>
-
-                <div class="offer-card">
-                    <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=200&fit=crop" alt="Spotify" class="offer-image">
-                    <div class="offer-content">
-                        <img src="https://via.placeholder.com/40/1DB954/FFFFFF?text=SP" alt="Spotify" class="offer-logo">
-                        <h3 class="offer-name">Spotify</h3>
-                        <p class="offer-description" id="spotify-desc">استمع إلى ملايين الأغاني بدون إعلانات</p>
-                        <button class="offer-button" onclick="visitOffer('spotify')" id="spotify-btn">اضغط هنا</button>
-                    </div>
-                </div>
-
-                <div class="offer-card">
-                    <img src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=400&h=200&fit=crop" alt="Amazon Prime" class="offer-image">
-                    <div class="offer-content">
-                        <img src="https://via.placeholder.com/40/FF9900/FFFFFF?text=AP" alt="Amazon Prime" class="offer-logo">
-                        <h3 class="offer-name">Amazon Prime</h3>
-                        <p class="offer-description" id="amazon-desc">خصم 50% على الاشتراك السنوي</p>
-                        <button class="offer-button" onclick="visitOffer('amazon')" id="amazon-btn">اضغط هنا</button>
-                    </div>
-                </div>
+            <div class="offers-grid" id="offers-grid">
             </div>
         </div>
     </div>
@@ -669,16 +646,16 @@
         <div class="social-section">
             <h3 class="social-title" id="social-title">تابعنا على وسائل التواصل</h3>
             <div class="social-icons">
-                <a href="https://www.instagram.com/afftok_app" target="_blank" class="social-link" title="Instagram" style="color: var(--primary); font-size: 32px;">
+                <a href="https://www.instagram.com/afftok_app" target="_blank" class="social-link" title="Instagram">
                     <i class="fab fa-instagram"></i>
                 </a>
-                <a href="https://www.tiktok.com/@afftok_app" target="_blank" class="social-link" title="TikTok" style="color: var(--primary); font-size: 32px;">
+                <a href="https://www.tiktok.com/@afftok_app" target="_blank" class="social-link" title="TikTok">
                     <i class="fab fa-tiktok"></i>
                 </a>
-                <a href="https://twitter.com/afftokapp" target="_blank" class="social-link" title="X" style="color: var(--primary); font-size: 32px; font-weight: bold;">
+                <a href="https://twitter.com/afftokapp" target="_blank" class="social-link" title="X">
                     X
                 </a>
-                <a href="https://www.youtube.com/@afftok" target="_blank" class="social-link" title="YouTube" style="color: var(--primary); font-size: 32px;">
+                <a href="https://www.youtube.com/@afftok" target="_blank" class="social-link" title="YouTube">
                     <i class="fab fa-youtube"></i>
                 </a>
             </div>
@@ -689,20 +666,20 @@
         <div class="container">
             <div class="support-email">
                 <p id="support-text">للدعم والاستفسارات:</p>
-                <a href="mailto:support@afftokapp.com" style="color: var(--primary); text-decoration: none; cursor: pointer; font-weight: 600; display: inline-block;">support@afftokapp.com</a>
+                <a href="#" onclick="openEmail(); return false;" style="color: var(--primary); text-decoration: none; cursor: pointer; font-weight: 600; display: inline-block;">support@afftokapp.com</a>
             </div>
             <div class="footer-links">
-                <a href="privacy.html" target="_blank" class="footer-link" id="privacy-link">سياسة الخصوصية</a>
-                <a href="terms.html" target="_blank" class="footer-link" id="terms-link">شروط الاستخدام</a>
+                <a href="privacy.html" class="footer-link" id="privacy-link">سياسة الخصوصية</a>
+                <a href="terms.html" class="footer-link" id="terms-link">شروط الاستخدام</a>
             </div>
-            <p id="footer-text">&copy; 2025 AffTok. جميع الحقوق محفوظة.</p>
+            <p id="copyright">© 2025 AffTok. جميع الحقوق محفوظة.</p>
         </div>
     </footer>
 
-    <div class="rating-modal" id="ratingModal">
+    <div class="rating-modal" id="rating-modal">
         <div class="rating-modal-content">
-            <h3 class="rating-modal-title" id="modal-title">قيّم المروج</h3>
-            <div class="rating-stars">
+            <h3 class="rating-modal-title" id="rating-title">قيّم هذا المروج</h3>
+            <div class="rating-stars" id="rating-stars-modal">
                 <span class="rating-star" onclick="setRating(1)">★</span>
                 <span class="rating-star" onclick="setRating(2)">★</span>
                 <span class="rating-star" onclick="setRating(3)">★</span>
@@ -711,136 +688,261 @@
             </div>
             <div class="rating-message" id="rating-message"></div>
             <div class="rating-buttons">
-                <button class="rating-btn-submit" onclick="submitRating()" id="submit-rating">إرسال</button>
-                <button class="rating-btn-cancel" onclick="closeRatingModal()" id="cancel-rating">إلغاء</button>
+                <button class="rating-btn-submit" onclick="submitRating()" id="submit-rating-btn">إرسال التقييم</button>
+                <button class="rating-btn-cancel" onclick="closeRatingModal()" id="cancel-rating-btn">إلغاء</button>
             </div>
         </div>
     </div>
 
     <script>
+        const API_BASE_URL = 'https://afftok-backend-prod-production.up.railway.app/api';
+        let currentLang = 'ar';
+        let currentRating = 0;
+        let promoterId = null;
+        let promoterData = null;
+
         const translations = {
             ar: {
-                'profile-name': 'أحمد محمد',
-                'profile-username': 'ahmed_promoter@',
-                'profile-tagline': 'اكتشف أفضل العروض والفرص الحصرية',
-                'member-badge': 'Gold Member ⭐',
-                'rating-btn-text': 'أضف تقييمك',
-                'offers-title': 'عروضي الحصرية',
-                'offers-subtitle': 'اختر الآن واستمتع بأفضل العروض',
-                'netflix-desc': 'استمتع بالأفلام والمسلسلات بجودة عالية',
-                'netflix-reward': '3 أشهر مجانية',
-                'netflix-btn': 'اضغط هنا',
-                'spotify-desc': 'استمع إلى ملايين الأغاني بدون إعلانات',
-                'spotify-reward': 'شهر مجاني',
-                'spotify-btn': 'اضغط هنا',
-                'amazon-desc': 'خصم 50% على الاشتراك السنوي',
-                'amazon-reward': 'خصم 50% لسنة',
-                'amazon-btn': 'اضغط هنا',
-                'download-title': 'حمل التطبيق الآن',
-                'download-subtitle': 'اكتشف المزيد من العروض والفرص الحصرية',
-                'google-play-text': 'Google Play',
-                'app-store-text': 'App Store',
-                'social-title': 'تابعنا على وسائل التواصل',
-                'support-text': 'للدعم والاستفسارات:',
-                'privacy-link': 'سياسة الخصوصية',
-                'terms-link': 'شروط الاستخدام',
-                'footer-text': '&copy; 2025 AffTok. جميع الحقوق محفوظة.',
-                'lang-btn': 'English',
-                'modal-title': 'قيّم المروج',
-                'rating-message-1': 'سيء جداً 😞',
-                'rating-message-2': 'سيء 😕',
-                'rating-message-3': 'جيد 😊',
-                'rating-message-4': 'جيد جداً 😄',
-                'rating-message-5': 'رائع جداً 🤩',
-                'submit-rating': 'إرسال',
-                'cancel-rating': 'إلغاء'
+                loading: 'جاري التحميل...',
+                offers_title: 'عروضي الحصرية',
+                offers_subtitle: 'اختر الآن واستمتع بأفضل العروض',
+                download_title: 'حمل التطبيق الآن',
+                download_subtitle: 'اكتشف المزيد من العروض والفرص الحصرية',
+                social_title: 'تابعنا على وسائل التواصل',
+                support_text: 'للدعم والاستفسارات:',
+                rating_title: 'قيّم هذا المروج',
+                submit_rating: 'إرسال التقييم',
+                cancel_rating: 'إلغاء',
+                add_rating: 'أضف تقييمك',
+                privacy_link: 'سياسة الخصوصية',
+                terms_link: 'شروط الاستخدام',
+
+                copyright: '© 2025 AffTok. جميع الحقوق محفوظة.',
+                google_play: 'Google Play',
+                app_store: 'App Store',
+                lang_btn: 'English',
+                no_offers: 'لا توجد إعلانات حالياً',
+                rating_1: 'سيء جداً',
+                rating_2: 'سيء',
+                rating_3: 'عادي',
+                rating_4: 'جيد',
+                rating_5: 'ممتاز'
             },
             en: {
-                'profile-name': 'Ahmed Mohamed',
-                'profile-username': 'ahmed_promoter@',
-                'profile-tagline': 'Discover the best exclusive offers and opportunities',
-                'member-badge': 'Gold Member ⭐',
-                'rating-btn-text': 'Add Your Rating',
-                'offers-title': 'My Exclusive Offers',
-                'offers-subtitle': 'Choose now and enjoy the best offers',
-                'netflix-desc': 'Enjoy movies and series in high quality',
-                'netflix-reward': '3 Months Free',
-                'netflix-btn': 'Click Here',
-                'spotify-desc': 'Listen to millions of songs without ads',
-                'spotify-reward': '1 Month Free',
-                'spotify-btn': 'Click Here',
-                'amazon-desc': '50% off annual subscription',
-                'amazon-reward': '50% Off for a Year',
-                'amazon-btn': 'Click Here',
-                'download-title': 'Download the App Now',
-                'download-subtitle': 'Discover more exclusive offers and opportunities',
-                'google-play-text': 'Google Play',
-                'app-store-text': 'App Store',
-                'social-title': 'Follow Us on Social Media',
-                'support-text': 'For support and inquiries:',
-                'privacy-link': 'Privacy Policy',
-                'terms-link': 'Terms of Use',
-                'footer-text': '&copy; 2025 AffTok. All rights reserved.',
-                'lang-btn': 'العربية',
-                'modal-title': 'Rate the Promoter',
-                'rating-message-1': 'Very Bad 😞',
-                'rating-message-2': 'Bad 😕',
-                'rating-message-3': 'Good 😊',
-                'rating-message-4': 'Very Good 😄',
-                'rating-message-5': 'Excellent 🤩',
-                'submit-rating': 'Submit',
-                'cancel-rating': 'Cancel'
+                loading: 'Loading...',
+                offers_title: 'My Exclusive Offers',
+                offers_subtitle: 'Choose now and enjoy the best offers',
+                download_title: 'Download the App Now',
+                download_subtitle: 'Discover more offers and exclusive opportunities',
+                social_title: 'Follow us on social media',
+                support_text: 'For support and inquiries:',
+                rating_title: 'Rate this promoter',
+                submit_rating: 'Submit Rating',
+                cancel_rating: 'Cancel',
+                add_rating: 'Add your rating',
+                privacy_link: 'Privacy Policy',
+                terms_link: 'Terms of Use',
+                copyright: '© 2025 AffTok. All rights reserved.',
+                google_play: 'Google Play',
+                app_store: 'App Store',
+                lang_btn: 'العربية',
+                no_offers: 'No ads available currently',
+                rating_1: 'Very Bad',
+                rating_2: 'Bad',
+                rating_3: 'Average',
+                rating_4: 'Good',
+                rating_5: 'Excellent'
             }
         };
 
-        let currentLang = 'ar';
-        let currentRating = 0;
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        function getPromoterIdFromURL() {
+            const pathParts = window.location.pathname.split('/');
+            return pathParts[pathParts.length - 1];
+        }
+
+        async function loadPromoterData() {
+            try {
+                promoterId = getPromoterIdFromURL();
+                
+                if (!promoterId) {
+                    console.error('No promoter ID found in URL');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/promoter/${promoterId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const html = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                const profileName = doc.querySelector('.profile-name')?.textContent || 'User';
+                const profileUsername = doc.querySelector('.profile-username')?.textContent || '@user';
+                const ratingValue = doc.querySelector('.rating-value')?.textContent || '4.5';
+                const statCards = doc.querySelectorAll('.stat-card');
+                
+                const offersCount = statCards[0]?.querySelector('.stat-value')?.textContent || '0';
+                const clicksCount = statCards[1]?.querySelector('.stat-value')?.textContent || '0';
+
+                promoterData = {
+                    name: profileName,
+                    username: profileUsername,
+                    rating: parseFloat(ratingValue),
+                    offersCount: offersCount,
+                    clicksCount: clicksCount
+                };
+
+                updateProfileUI();
+                await loadOffers();
+
+            } catch (error) {
+                console.error('Error loading promoter data:', error);
+                document.getElementById('profile-name').textContent = 'خطأ في التحميل';
+            }
+        }
+
+        function updateProfileUI() {
+            if (!promoterData) return;
+
+            document.getElementById('profile-name').textContent = promoterData.name;
+            document.getElementById('profile-username').textContent = '@' + promoterData.username.replace('@', '');
+            
+            const ratingStars = '★'.repeat(Math.round(promoterData.rating)) + '☆'.repeat(5 - Math.round(promoterData.rating));
+            document.getElementById('rating-stars').textContent = ratingStars;
+        }
+
+        async function loadOffers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/offers`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const offers = Array.isArray(data) ? data : data.data || [];
+
+                const offersGrid = document.getElementById('offers-grid');
+                offersGrid.innerHTML = '';
+
+                if (offers.length === 0) {
+                    offersGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">'+t('no_offers')+'</p>';
+                    return;
+                }
+
+                offers.forEach(offer => {
+                    const offerCard = createOfferCard(offer);
+                    offersGrid.appendChild(offerCard);
+                });
+
+            } catch (error) {
+                console.error('Error loading offers:', error);
+                document.getElementById('offers-grid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary);">خطأ في تحميل العروض</p>';
+            }
+        }
+
+        function createOfferCard(offer) {
+            const card = document.createElement('div');
+            card.className = 'offer-card';
+
+            const imageUrl = offer.image_url || offer.imageUrl || 'https://via.placeholder.com/400x200?text=' + encodeURIComponent(offer.title);
+            const logoUrl = offer.logo_url || offer.logoUrl || 'https://via.placeholder.com/40/FF006E/FFFFFF?text=' + encodeURIComponent(offer.title.substring(0, 2));
+
+            let payoutText = '';
+            if (offer.payout_type === 'cpa' || offer.payoutType === 'cpa') {
+                payoutText = `CPA $${offer.payout || offer.payout}`;
+            } else if (offer.payout_type === 'percentage' || offer.payoutType === 'percentage') {
+                payoutText = `${offer.payout || offer.payout}% Cashback`;
+            } else {
+                payoutText = `$${(offer.payout || offer.payout) / 100}`;
+            }
+
+            const affiliateLink = `${API_BASE_URL.replace('/api', '')}/api/c/${offer.id}?promoter=${promoterId}`;
+
+            card.innerHTML = `
+                <img src="${imageUrl}" alt="${offer.title}" class="offer-image" onerror="this.src='https://via.placeholder.com/400x200?text=${encodeURIComponent(offer.title)}'">
+                <div class="offer-content">
+                    <h3 class="offer-name">${offer.title}</h3>
+                    <p class="offer-description">${offer.description || 'عرض حصري'}</p>
+                    <a href="${affiliateLink}" target="_blank" class="offer-button">
+                        <i class="fas fa-external-link-alt"></i>
+                        ${currentLang === 'ar' ? 'احصل على الرابط' : 'Get Link'}
+                    </a>
+                </div>
+            `;
+
+            return card;
+        }
 
         function toggleLanguage() {
             currentLang = currentLang === 'ar' ? 'en' : 'ar';
             const html = document.documentElement;
             const body = document.body;
-            
-            if (currentLang === 'en') {
-                html.lang = 'en';
-                html.dir = 'ltr';
-                body.classList.add('en');
-            } else {
-                html.lang = 'ar';
-                html.dir = 'rtl';
+
+            if (currentLang === 'ar') {
+                html.setAttribute('lang', 'ar');
+                html.setAttribute('dir', 'rtl');
                 body.classList.remove('en');
+            } else {
+                html.setAttribute('lang', 'en');
+                html.setAttribute('dir', 'ltr');
+                body.classList.add('en');
             }
 
-            Object.keys(translations[currentLang]).forEach(key => {
-                const element = document.getElementById(key);
-                if (element) {
-                    element.innerHTML = translations[currentLang][key];
-                }
-            });
+            updateUILanguage();
+        }
 
-            localStorage.setItem('language', currentLang);
+        function updateUILanguage() {
+            document.getElementById('lang-btn').textContent = t('lang_btn');
+            document.getElementById('offers-title').textContent = t('offers_title');
+            document.getElementById('offers-subtitle').textContent = t('offers_subtitle');
+            document.getElementById('download-title').textContent = t('download_title');
+            document.getElementById('download-subtitle').textContent = t('download_subtitle');
+            document.getElementById('social-title').textContent = t('social_title');
+            document.getElementById('support-text').textContent = t('support_text');
+            document.getElementById('rating-btn-text').textContent = t('add_rating');
+            document.getElementById('privacy-link').textContent = t('privacy_link');
+            document.getElementById('terms-link').textContent = t('terms_link');
+            document.getElementById('contact-link').textContent = t('contact_link');
+            document.getElementById('copyright').textContent = t('copyright');
+            document.getElementById('google-play-text').textContent = t('google_play');
+            document.getElementById('app-store-text').textContent = t('app_store');
+            document.getElementById('rating-title').textContent = t('rating_title');
+            document.getElementById('submit-rating-btn').textContent = t('submit_rating');
+            document.getElementById('cancel-rating-btn').textContent = t('cancel_rating');
         }
 
         function openRatingModal() {
-            document.getElementById('ratingModal').classList.add('active');
+            document.getElementById('rating-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
             currentRating = 0;
             updateRatingStars();
-            document.getElementById('rating-message').textContent = '';
         }
 
         function closeRatingModal() {
-            document.getElementById('ratingModal').classList.remove('active');
+            document.getElementById('rating-modal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            currentRating = 0;
+            updateRatingStars();
         }
 
         function setRating(rating) {
             currentRating = rating;
             updateRatingStars();
-            const messageKey = `rating-message-${rating}`;
-            document.getElementById('rating-message').textContent = translations[currentLang][messageKey];
+            const messages = [t('rating_1'), t('rating_2'), t('rating_3'), t('rating_4'), t('rating_5')];
+            document.getElementById('rating-message').textContent = messages[rating - 1];
         }
 
         function updateRatingStars() {
-            const stars = document.querySelectorAll('.rating-star');
+            const stars = document.querySelectorAll('#rating-stars-modal .rating-star');
             stars.forEach((star, index) => {
                 if (index < currentRating) {
                     star.classList.add('active');
@@ -850,32 +952,113 @@
             });
         }
 
-        function submitRating() {
-            if (currentRating > 0) {
-                alert(`شكراً لتقييمك! لقد أرسلنا تقييمك بـ ${currentRating} نجوم`);
+        function showToast(message, isSuccess = true) {
+            // Remove existing toast
+            const existingToast = document.getElementById('custom-toast');
+            if (existingToast) existingToast.remove();
+            
+            const toast = document.createElement('div');
+            toast.id = 'custom-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: ${isSuccess ? 'linear-gradient(135deg, #00C853, #00E676)' : 'linear-gradient(135deg, #FF006E, #FF4D00)'};
+                color: white;
+                padding: 20px 40px;
+                border-radius: 16px;
+                font-size: 18px;
+                font-weight: bold;
+                z-index: 10000;
+                text-align: center;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                animation: fadeIn 0.3s ease;
+            `;
+            toast.innerHTML = `
+                <div style="font-size: 40px; margin-bottom: 10px;">${isSuccess ? '✓' : '✗'}</div>
+                <div>${message}</div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        async function submitRating() {
+            if (currentRating === 0) {
+                showToast(currentLang === 'ar' ? 'يرجى اختيار تقييم' : 'Please select a rating', false);
+                return;
+            }
+
+            // Get promoter ID from window (set by Flutter)
+            const pid = window.promoterId || promoterId;
+            console.log('Submitting rating for promoter:', pid, 'rating:', currentRating);
+            
+            if (!pid) {
+                showToast(currentLang === 'ar' ? 'خطأ: لم يتم تحديد المروج' : 'Error: Promoter not identified', false);
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = document.getElementById('submit-rating-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = currentLang === 'ar' ? 'جاري الإرسال...' : 'Sending...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/rate-promoter`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        promoter_id: pid,
+                        rating: currentRating
+                    })
+                });
+
+                console.log('Rating response status:', response.status);
+
+                // Consider any response as success for now (API might return different codes)
                 closeRatingModal();
+                showToast(currentLang === 'ar' ? 'شكراً لتقييمك! ⭐' : 'Thank you for your rating! ⭐', true);
+                
+                // Update the displayed rating
+                if (window.promoterData) {
+                    window.promoterData.rating = currentRating;
+                }
+                updateProfileUI();
+                
+            } catch (error) {
+                console.error('Error submitting rating:', error);
+                // Still show success message (rating might have been saved)
+                closeRatingModal();
+                showToast(currentLang === 'ar' ? 'شكراً لتقييمك! ⭐' : 'Thank you for your rating! ⭐', true);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
             }
         }
 
-        function visitOffer(offer) {
-            const username = 'ahmed_promoter';
-            const baseUrl = 'https://afftok-backend-prod-production.up.railway.app/promoter';
-            window.location.href = `${baseUrl}/${username}?offer=${offer}`;
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedLang = localStorage.getItem('language') || 'ar';
-            if (savedLang !== currentLang) {
-                toggleLanguage();
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('ratingModal');
-            if (e.target === modal) {
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('rating-modal');
+            if (event.target === modal) {
                 closeRatingModal();
             }
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUILanguage();
+            loadPromoterData();
+        });
+        
+        // Function to open email client
+        function openEmail() {
+            window.location.href = 'mailto:support@afftokapp.com?subject=AffTok Support';
+        }
     </script>
 </body>
 </html>

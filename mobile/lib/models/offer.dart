@@ -38,14 +38,28 @@ class Offer {
   });
 
   factory Offer.fromJson(Map<String, dynamic> json) {
-    final payout = json['payout'] ?? 0;
+    final payout = json['payout'] ?? json['commission'] ?? 0;
     final payoutType = json['payout_type'] ?? 'cpa';
 
-    String rewardText = '$payout $payoutType';
+    String rewardText = '\$$payout per $payoutType';
+    
+    // Parse rating safely
+    double rating = 4.5;
+    if (json['rating'] != null) {
+      if (json['rating'] is double) {
+        rating = json['rating'];
+      } else if (json['rating'] is int) {
+        rating = (json['rating'] as int).toDouble();
+      } else if (json['rating'] is String) {
+        rating = double.tryParse(json['rating']) ?? 4.5;
+      }
+    }
+    
+    print('[Offer.fromJson] Parsing offer: ${json['title']}, id: ${json['id']}');
 
     return Offer(
-      id: json['id'] ?? '',
-      companyName: json['title'] ?? '',
+      id: json['id']?.toString() ?? '',
+      companyName: json['title'] ?? json['name'] ?? 'Offer',
       logoUrl: json['logo_url'] ?? '',
       imageUrl: json['image_url'] ?? '',
       reward: rewardText,
@@ -53,10 +67,10 @@ class Offer {
       category: json['category'] ?? 'General',
       offerUrl: json['destination_url'] ?? '',
       registrationUrl: json['destination_url'] ?? '',
-      rating: 4.5,
+      rating: rating,
       usersCount: json['users_count']?.toString() ?? '0',
       isRegistered: json['is_registered'] ?? false,
-      networkId: json['network_id'],
+      networkId: json['network_id']?.toString(),
       networkName: json['network_name'],
       trackingParameter: json['tracking_parameter'],
       trackingLinkTemplate: json['tracking_link_template'],

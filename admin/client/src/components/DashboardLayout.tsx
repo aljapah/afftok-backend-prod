@@ -21,11 +21,28 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Tag, Network, UsersRound, Award, BarChart3 } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  LogOut, 
+  PanelLeft, 
+  Users, 
+  Tag, 
+  Network, 
+  UsersRound, 
+  Award, 
+  BarChart3,
+  Activity,
+  Building2,
+  Globe,
+  Shield,
+  FileText,
+  Webhook
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { Separator } from "./ui/separator";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -35,6 +52,15 @@ const menuItems = [
   { icon: UsersRound, label: "Teams", path: "/teams" },
   { icon: Award, label: "Badges", path: "/badges" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
+];
+
+const systemMenuItems = [
+  { icon: Activity, label: "Monitoring", path: "/monitoring" },
+  { icon: Building2, label: "Tenants", path: "/tenants" },
+  { icon: Globe, label: "Geo Rules", path: "/geo-rules" },
+  { icon: Shield, label: "Fraud Detection", path: "/fraud" },
+  { icon: FileText, label: "Logs", path: "/logs" },
+  { icon: Webhook, label: "Webhooks", path: "/webhooks" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -127,7 +153,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const activeMenuItem = [...menuItems, ...systemMenuItems].find(item => item.path === location);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -216,6 +242,35 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
+                const isActive = location === item.path;
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      onClick={() => setLocation(item.path)}
+                      tooltip={item.label}
+                      className={`h-10 transition-all font-normal`}
+                    >
+                      <item.icon
+                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                      />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+            
+            {/* System Section */}
+            <div className="px-4 py-2">
+              <Separator />
+              <p className="text-xs font-medium text-muted-foreground mt-3 mb-1 group-data-[collapsible=icon]:hidden">
+                System
+              </p>
+            </div>
+            
+            <SidebarMenu className="px-2 py-1">
+              {systemMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>

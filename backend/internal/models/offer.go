@@ -29,8 +29,17 @@ type Offer struct {
 	ID               uuid.UUID  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
 	NetworkID        *uuid.UUID `gorm:"type:uuid" json:"network_id,omitempty"`
 	ExternalOfferID  string     `gorm:"type:varchar(100)" json:"external_offer_id,omitempty"`
+	
+	// English Fields
 	Title            string     `gorm:"type:varchar(255);not null" json:"title"`
 	Description      string     `gorm:"type:text" json:"description,omitempty"`
+	
+	// Arabic Fields (للمستخدم العربي)
+	TitleAr          string     `gorm:"type:varchar(255)" json:"title_ar,omitempty"`
+	DescriptionAr    string     `gorm:"type:text" json:"description_ar,omitempty"`
+	TermsAr          string     `gorm:"type:text" json:"terms_ar,omitempty"`
+	
+	// Common Fields
 	ImageURL         string     `gorm:"type:text" json:"image_url,omitempty"`
 	LogoURL          string     `gorm:"type:text" json:"logo_url,omitempty"`
 	DestinationURL   string     `gorm:"type:text;not null" json:"destination_url"`
@@ -49,6 +58,22 @@ type Offer struct {
 	UserOffers       []UserOffer `gorm:"foreignKey:OfferID" json:"user_offers,omitempty"`
 }
 
+// GetTitle returns title based on language preference
+func (o *Offer) GetTitle(lang string) string {
+	if lang == "ar" && o.TitleAr != "" {
+		return o.TitleAr
+	}
+	return o.Title
+}
+
+// GetDescription returns description based on language preference
+func (o *Offer) GetDescription(lang string) string {
+	if lang == "ar" && o.DescriptionAr != "" {
+		return o.DescriptionAr
+	}
+	return o.Description
+}
+
 func (Offer) TableName() string {
 	return "offers"
 }
@@ -62,13 +87,17 @@ func (o *Offer) ConversionRate() float64 {
 
 type UserOffer struct {
 	ID            uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
-	UserID        uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
-	OfferID       uuid.UUID `gorm:"type:uuid;not null" json:"offer_id"`
+	UserID        uuid.UUID `gorm:"type:uuid;not null;index:idx_user_offers_user" json:"user_id"`
+	OfferID       uuid.UUID `gorm:"type:uuid;not null;index:idx_user_offers_offer" json:"offer_id"`
 	AffiliateLink string    `gorm:"type:text;not null" json:"affiliate_link"`
-	ShortLink     string    `gorm:"type:text" json:"short_link,omitempty"`
-	Status        string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	ShortLink     string    `gorm:"type:text;index:idx_user_offers_short_link" json:"short_link,omitempty"`
+	TrackingCode  string    `gorm:"type:varchar(32);index:idx_user_offers_tracking" json:"tracking_code,omitempty"`
+	Status        string    `gorm:"type:varchar(20);default:'active';index:idx_user_offers_status" json:"status"`
 	Earnings      int       `gorm:"default:0" json:"earnings"`
+	TotalClicks   int       `gorm:"default:0" json:"total_clicks"`
+	TotalConversions int    `gorm:"default:0" json:"total_conversions"`
 	JoinedAt      time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"joined_at"`
+	UpdatedAt     time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 	User          *AfftokUser  `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Offer         *Offer       `gorm:"foreignKey:OfferID" json:"offer,omitempty"`
 	Clicks        []Click      `gorm:"foreignKey:UserOfferID" json:"clicks,omitempty"`

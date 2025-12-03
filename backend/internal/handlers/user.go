@@ -2,19 +2,25 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
+	"github.com/aljapah/afftok-backend-prod/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type UserHandler struct {
-	db *gorm.DB
+	db               *gorm.DB
+	analyticsService *services.AnalyticsService
 }
 
 func NewUserHandler(db *gorm.DB) *UserHandler {
-	return &UserHandler{db: db}
+	return &UserHandler{
+		db:               db,
+		analyticsService: services.NewAnalyticsService(),
+	}
 }
 
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
@@ -171,5 +177,45 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User deleted successfully",
+	})
+}
+
+// GetMyStats returns detailed statistics for the current user
+func (h *UserHandler) GetMyStats(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	stats, err := h.analyticsService.GetUserStats(userID.(uuid.UUID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch stats"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"stats":   stats,
+	})
+}
+
+// GetDailyStats returns daily click/conversion data for charts
+func (h *UserHandler) GetDailyStats(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	days := 7 // Default to 7 days
+	if d := c.Query("days"); d != "" {
+		if parsed, err := strconv.Atoi(d); err == nil && parsed > 0 && parsed <= 90 {
+			days = parsed
+		}
+	}
+
+	stats, err := h.analyticsService.GetDailyStats(userID.(uuid.UUID), days)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch daily stats"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    stats,
+		"days":    days,
 	})
 }

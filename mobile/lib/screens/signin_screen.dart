@@ -5,6 +5,7 @@ import 'home_feed_screen.dart';
 import '../services/auth_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -16,10 +17,81 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _rememberMe = false;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+    _checkAutoLogin();
+  }
+
+  void _loadSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedEmail = prefs.getString('saved_email');
+      final savedPassword = prefs.getString('saved_password');
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+
+      if (savedEmail != null && savedPassword != null && mounted) {
+        setState(() {
+          _emailController.text = savedEmail;
+          _passwordController.text = savedPassword;
+          _rememberMe = rememberMe;
+        });
+      }
+    } catch (e) {
+      print('Error loading saved credentials: $e');
+    }
+  }
+
+  void _checkAutoLogin() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+      
+      if (rememberMe && mounted) {
+        final savedEmail = prefs.getString('saved_email');
+        final savedPassword = prefs.getString('saved_password');
+        
+        if (savedEmail != null && savedPassword != null) {
+          setState(() {
+            _isLoading = true;
+          });
+          
+          try {
+            await _authService.login(savedEmail, savedPassword);
+            
+            if (mounted) {
+              await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeFeedScreen()),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Auto-login failed: ${e.toString().replaceFirst("Exception: ", "")}'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error checking auto-login: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -38,8 +110,19 @@ class _SignInScreenState extends State<SignInScreen> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
+        
+        final prefs = await SharedPreferences.getInstance();
+        if (_rememberMe) {
+          await prefs.setString('saved_email', _emailController.text.trim());
+          await prefs.setString('saved_password', _passwordController.text.trim());
+          await prefs.setBool('remember_me', true);
+        } else {
+          await prefs.remove('saved_email');
+          await prefs.remove('saved_password');
+          await prefs.setBool('remember_me', false);
+        }
+        
         if (mounted) {
-          // Load user data after successful login
           await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
           Navigator.pushReplacement(
             context,
@@ -72,7 +155,6 @@ class _SignInScreenState extends State<SignInScreen> {
     try {
       await _authService.googleSignIn();
       if (mounted) {
-        // Load user data after successful Google sign-in
         await Provider.of<AuthProvider>(context, listen: false).loadCurrentUser();
         Navigator.pushReplacement(
           context,
@@ -205,18 +287,41 @@ class _SignInScreenState extends State<SignInScreen> {
               
               const SizedBox(height: 12),
               
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    lang.forgotPassword,
-                    style: const TextStyle(
-                      color: Color(0xFFFF006E),
-                      fontWeight: FontWeight.w500,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: (value) {
+                          setState(() {
+                            _rememberMe = value ?? false;
+                          });
+                        },
+                        activeColor: const Color(0xFFFF006E),
+                        checkColor: Colors.white,
+                      ),
+                      Text(
+                        'Remember me',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      lang.forgotPassword,
+                      style: const TextStyle(
+                        color: Color(0xFFFF006E),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
               
               const SizedBox(height: 24),

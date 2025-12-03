@@ -25,25 +25,52 @@ class User {
     required this.createdAt,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
+  /// Factory that handles both nested stats and separate stats object
+  /// Backend returns: { user: {...}, stats: {...} }
+  /// This factory handles: user object directly OR combined user+stats
+  factory User.fromJson(Map<String, dynamic> json, {Map<String, dynamic>? externalStats}) {
+    // Determine user level from total_conversions or level field
+    final totalConversions = externalStats?['total_conversions'] ?? 
+                             json['stats']?['total_conversions'] ?? 
+                             json['total_conversions'] ?? 0;
+    
+    UserLevel userLevel;
+    final levelStr = json['level'];
+    if (levelStr is String) {
+      userLevel = UserLevel.values.firstWhere(
+        (e) => e.name == levelStr,
+        orElse: () => _getLevelFromConversions(totalConversions),
+      );
+    } else {
+      userLevel = _getLevelFromConversions(totalConversions);
+    }
+    
+    // Build stats from external stats object or nested stats
+    final statsData = externalStats ?? json['stats'] ?? {};
+    
     return User(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       username: json['username'] ?? '',
-      displayName: json['display_name'] ?? json['displayName'] ?? '',
+      displayName: json['full_name'] ?? json['display_name'] ?? json['displayName'] ?? json['username'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'],
       avatarUrl: json['avatar_url'] ?? json['avatarUrl'],
       bio: json['bio'],
-      level: UserLevel.values.firstWhere(
-        (e) => e.name == (json['level'] ?? 'rookie'),
-        orElse: () => UserLevel.rookie,
-      ),
-      stats: UserStats.fromJson(json['stats'] ?? {}),
+      level: userLevel,
+      stats: UserStats.fromJson(statsData),
       teamId: json['team_id'] ?? json['teamId'],
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
     );
+  }
+  
+  static UserLevel _getLevelFromConversions(int conversions) {
+    if (conversions >= 500) return UserLevel.legend;
+    if (conversions >= 201) return UserLevel.master;
+    if (conversions >= 51) return UserLevel.expert;
+    if (conversions >= 11) return UserLevel.pro;
+    return UserLevel.rookie;
   }
 
   String get personalLink => 'afftok.com/u/$username';
@@ -56,7 +83,7 @@ class User {
   
   int get totalConversions => stats.totalConversions;
   
-  double get totalEarnings => 0.0; // Will be calculated from conversions
+  double get totalEarnings => stats.totalEarnings.toDouble();
   
   String get fullName => displayName;
   
@@ -125,6 +152,7 @@ extension UserLevelExtension on UserLevel {
 class UserStats {
   final int totalClicks;
   final int totalConversions;
+  final int totalEarnings;
   final int totalRegisteredOffers;
   final int monthlyClicks;
   final int monthlyConversions;
@@ -134,6 +162,7 @@ class UserStats {
   UserStats({
     required this.totalClicks,
     required this.totalConversions,
+    required this.totalEarnings,
     required this.totalRegisteredOffers,
     required this.monthlyClicks,
     required this.monthlyConversions,
@@ -142,13 +171,23 @@ class UserStats {
   });
 
   factory UserStats.fromJson(Map<String, dynamic> json) {
+    // Parse numeric values safely (backend may send int or double)
+    int parseIntSafe(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+    
     return UserStats(
-      totalClicks: json['total_clicks'] ?? json['totalClicks'] ?? 0,
-      totalConversions: json['total_conversions'] ?? json['totalConversions'] ?? 0,
-      totalRegisteredOffers: json['total_registered_offers'] ?? json['totalRegisteredOffers'] ?? 0,
-      monthlyClicks: json['monthly_clicks'] ?? json['monthlyClicks'] ?? 0,
-      monthlyConversions: json['monthly_conversions'] ?? json['monthlyConversions'] ?? 0,
-      globalRank: json['global_rank'] ?? json['globalRank'] ?? 0,
+      totalClicks: parseIntSafe(json['total_clicks'] ?? json['totalClicks']),
+      totalConversions: parseIntSafe(json['total_conversions'] ?? json['totalConversions']),
+      totalEarnings: parseIntSafe(json['total_earnings'] ?? json['totalEarnings']),
+      totalRegisteredOffers: parseIntSafe(json['total_registered_offers'] ?? json['totalRegisteredOffers']),
+      monthlyClicks: parseIntSafe(json['monthly_clicks'] ?? json['monthlyClicks']),
+      monthlyConversions: parseIntSafe(json['monthly_conversions'] ?? json['monthlyConversions']),
+      globalRank: parseIntSafe(json['global_rank'] ?? json['globalRank']),
       offerStats: {},
     );
   }

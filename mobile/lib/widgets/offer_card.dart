@@ -65,6 +65,18 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userID = authProvider.currentUser?.id;
     
+    // Check if already added
+    if (authProvider.hasAddedOffer(widget.offer.id)) {
+      setState(() => isAdded = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.offerAlreadyAdded),
+          backgroundColor: const Color(0xFF8E2DE2), // App theme color
+        ),
+      );
+      return;
+    }
+    
     String finalUrl = url;
     if (userID != null && userID.isNotEmpty) {
       final separator = url.contains('?') ? '&' : '?';
@@ -74,9 +86,16 @@ class _OfferCardState extends State<OfferCard> with SingleTickerProviderStateMix
     final Uri uri = Uri.parse(finalUrl);
 
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-
+      // First, add the offer to user's profile via API
+      print('[OfferCard] Adding offer ${widget.offer.id} to profile...');
+      final success = await authProvider.addOfferToProfile(widget.offer.id);
+      print('[OfferCard] Add offer result: $success');
+      
+      // Always mark as added and open URL (even if API says already joined)
       setState(() => isAdded = true);
+      
+      // Open the registration URL
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

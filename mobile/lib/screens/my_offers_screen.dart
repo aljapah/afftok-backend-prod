@@ -2,15 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
-import '../models/offer.dart';
 import '../models/user_offer.dart';
-import '../models/user.dart';
 import '../utils/app_localizations.dart';
 import '../providers/auth_provider.dart';
-import 'offer_details_screen.dart';
 
-class MyOffersScreen extends StatelessWidget {
+class MyOffersScreen extends StatefulWidget {
   const MyOffersScreen({Key? key}) : super(key: key);
+
+  @override
+  State<MyOffersScreen> createState() => _MyOffersScreenState();
+}
+
+class _MyOffersScreenState extends State<MyOffersScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshOffers();
+    });
+  }
+
+  Future<void> _refreshOffers() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    await authProvider.reloadUserOffers();
+  }
 
   void _copyLink(BuildContext context, String link) {
     Clipboard.setData(ClipboardData(text: link));
@@ -51,43 +66,51 @@ class MyOffersScreen extends StatelessWidget {
           );
         }
         
-        final userOffers = getUserOffers(user.id);
-        final allOffers = Offer.getSampleOffers();
+        // Use offers from AuthProvider instead of sample data
+        final userOffers = authProvider.userOffers;
 
         return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          lang.myOffers,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: userOffers.isEmpty
-          ? _buildEmptyState(context, lang)
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: userOffers.length,
-              itemBuilder: (context, index) {
-                final userOffer = userOffers[index];
-                final offer = allOffers.firstWhere(
-                  (o) => o.id == userOffer.offerId,
-                  orElse: () => allOffers.first,
-                );
-                return _buildOfferCard(context, offer, userOffer, lang);
-              },
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            title: Text(
+              lang.myOffers,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-    );
-      }
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                onPressed: _refreshOffers,
+              ),
+            ],
+          ),
+          body: RefreshIndicator(
+            onRefresh: _refreshOffers,
+            color: const Color(0xFF8E2DE2),
+            backgroundColor: Colors.grey[900],
+            child: userOffers.isEmpty
+                ? _buildEmptyState(context, lang)
+                : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: userOffers.length,
+                    itemBuilder: (context, index) {
+                      final userOffer = userOffers[index];
+                      return _buildUserOfferCard(context, userOffer, lang);
+                    },
+                  ),
+          ),
+        );
+      },
     );
   }
 
@@ -145,12 +168,16 @@ class MyOffersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOfferCard(
+  Widget _buildUserOfferCard(
     BuildContext context,
-    Offer offer,
     UserOffer userOffer,
     AppLocalizations lang,
   ) {
+    // Get offer info from the userOffer (populated by backend)
+    final offerTitle = userOffer.offerInfo?.title ?? userOffer.offerTitle;
+    final offerLogo = userOffer.offerInfo?.logoUrl ?? '';
+    final offerCategory = userOffer.offerInfo?.category ?? '';
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -175,21 +202,32 @@ class MyOffersScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   padding: const EdgeInsets.all(8),
-                  child: Image.network(
-                    offer.logoUrl,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Text(
-                          offer.companyName[0],
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                  child: offerLogo.isNotEmpty
+                      ? Image.network(
+                          offerLogo,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Text(
+                                offerTitle.isNotEmpty ? offerTitle[0] : '?',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Text(
+                            offerTitle.isNotEmpty ? offerTitle[0] : '?',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
-                      );
-                    },
-                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -197,46 +235,50 @@ class MyOffersScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        offer.companyName,
+                        offerTitle,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                      if (offerCategory.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          offer.reward,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            offerCategory,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green[900]?.withOpacity(0.3),
+                    color: userOffer.isActive
+                        ? Colors.green[900]?.withOpacity(0.3)
+                        : Colors.red[900]?.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    Icons.check_circle,
-                    color: Colors.green[400],
+                    userOffer.isActive ? Icons.check_circle : Icons.pause_circle,
+                    color: userOffer.isActive ? Colors.green[400] : Colors.red[400],
                     size: 24,
                   ),
                 ),
@@ -300,7 +342,7 @@ class MyOffersScreen extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _shareOffer(
-                      offer.companyName,
+                      offerTitle,
                       userOffer.userReferralLink,
                     ),
                     icon: const Icon(Icons.share, size: 18),
@@ -314,32 +356,6 @@ class MyOffersScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OfferDetailsScreen(
-                          offer: offer,
-                          userOffer: userOffer,
-                        ),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.grey),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Icon(Icons.arrow_forward, size: 18),
                 ),
               ],
             ),
