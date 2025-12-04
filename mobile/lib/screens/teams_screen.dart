@@ -1346,14 +1346,14 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
                                     : [const Color(0xFFFF006E), const Color(0xFFFF4D00)],
                               ),
                             ),
-                            child: member.user?.avatarUrl != null && member.user!.avatarUrl!.isNotEmpty
+                            child: member.avatarUrl != null && member.avatarUrl!.isNotEmpty
                                 ? ClipOval(
                                     child: Image.network(
-                                      member.user!.avatarUrl!,
+                                      member.avatarUrl!,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => Center(
                                         child: Text(
-                                          (member.user?.fullName ?? member.user?.username ?? 'U')[0].toUpperCase(),
+                                          (member.displayName.isNotEmpty ? member.displayName : member.username)[0].toUpperCase(),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -1365,7 +1365,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
                                   )
                                 : Center(
                                     child: Text(
-                                      (member.user?.fullName ?? member.user?.username ?? 'U')[0].toUpperCase(),
+                                      (member.displayName.isNotEmpty ? member.displayName : member.username)[0].toUpperCase(),
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -1383,12 +1383,15 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
                               children: [
                                 Row(
                                   children: [
-                                    Text(
-                                      member.user?.fullName ?? member.user?.username ?? 'Unknown',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
+                                    Flexible(
+                                      child: Text(
+                                        member.displayName.isNotEmpty ? member.displayName : member.username,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -1413,7 +1416,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '@${member.user?.username ?? 'unknown'}',
+                                  '@${member.username}',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.5),
                                     fontSize: 12,
@@ -1436,7 +1439,7 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${member.user?.totalClicks ?? 0}',
+                                    '${member.referrals}',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -1515,37 +1518,6 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildStatItem({required IconData icon, required String value, required String label}) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: const Color(0xFFFF006E), size: 20),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
-            fontSize: 12,
-          ),
-        ),
-      ],
     );
   }
 
