@@ -1081,91 +1081,471 @@ class _TeamsScreenState extends State<TeamsScreen> with SingleTickerProviderStat
   }
 
   Widget _buildLeaderboardItem(BuildContext context, AppLocalizations lang, TeamProvider teamProvider, Team team, int rank) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: rank <= 3
-              ? Color(team.rank.color).withOpacity(0.5)
-              : Colors.white.withOpacity(0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Rank
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: rank == 1
-                  ? const Color(0xFFFFD700)
-                  : rank == 2
-                      ? const Color(0xFFC0C0C0)
-                      : rank == 3
-                          ? const Color(0xFFCD7F32)
-                          : Colors.white.withOpacity(0.1),
-            ),
-            child: Center(
-              child: Text(
-                '$rank',
-                style: TextStyle(
-                  color: rank <= 3 ? Colors.black : Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+    return GestureDetector(
+      onTap: () => _showTeamDetailsSheet(context, lang, teamProvider, team, rank),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: rank <= 3
+                ? Color(team.rank.color).withOpacity(0.5)
+                : Colors.white.withOpacity(0.1),
           ),
-          const SizedBox(width: 12),
-          
-          // Team Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      team.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(team.rank.emoji),
-                  ],
-                ),
-                Text(
-                  '${team.memberCount} ${lang.members} • ${team.stats.totalPoints} ${lang.points}',
+        ),
+        child: Row(
+          children: [
+            // Rank
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: rank == 1
+                    ? const Color(0xFFFFD700)
+                    : rank == 2
+                        ? const Color(0xFFC0C0C0)
+                        : rank == 3
+                            ? const Color(0xFFCD7F32)
+                            : Colors.white.withOpacity(0.1),
+              ),
+              child: Center(
+                child: Text(
+                  '$rank',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 12,
+                    color: rank <= 3 ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
-          ),
-          
-          // Join Button or "In Team" indicator
-          if (teamProvider.userTeam == null)
-            ElevatedButton(
-              onPressed: team.isFull
-                  ? null
-                  : () => _confirmJoinTeam(context, lang, teamProvider, team),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: team.isFull ? Colors.grey : const Color(0xFFFF006E),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
-              child: Text(team.isFull ? lang.full : lang.join),
             ),
-        ],
+            const SizedBox(width: 12),
+            
+            // Team Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        team.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(team.rank.emoji),
+                    ],
+                  ),
+                  Text(
+                    '${team.memberCount} ${lang.members} • ${team.stats.totalPoints} ${lang.points}',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Arrow indicator (tap to see details)
+            Icon(
+              Icons.chevron_right,
+              color: Colors.white.withOpacity(0.3),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  // Show team details with members
+  void _showTeamDetailsSheet(BuildContext context, AppLocalizations lang, TeamProvider teamProvider, Team team, int rank) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Team Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    // Rank Badge
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: rank == 1
+                              ? [const Color(0xFFFFD700), const Color(0xFFFFB800)]
+                              : rank == 2
+                                  ? [const Color(0xFFC0C0C0), const Color(0xFF909090)]
+                                  : rank == 3
+                                      ? [const Color(0xFFCD7F32), const Color(0xFFA0522D)]
+                                      : [const Color(0xFFFF006E), const Color(0xFFFF4D00)],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '#$rank',
+                          style: TextStyle(
+                            color: rank <= 3 ? Colors.black : Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Team Name
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          team.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(team.rank.emoji, style: const TextStyle(fontSize: 24)),
+                      ],
+                    ),
+                    if (team.description != null && team.description!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        team.description!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Stats Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildStatItem(
+                          icon: Icons.people,
+                          value: '${team.memberCount}',
+                          label: lang.members,
+                        ),
+                        _buildStatItem(
+                          icon: Icons.touch_app,
+                          value: '${team.stats.totalClicks}',
+                          label: isArabic ? 'نقرات' : 'Clicks',
+                        ),
+                        _buildStatItem(
+                          icon: Icons.check_circle,
+                          value: '${team.stats.totalConversions}',
+                          label: isArabic ? 'تحويلات' : 'Conversions',
+                        ),
+                        _buildStatItem(
+                          icon: Icons.star,
+                          value: '${team.stats.totalPoints}',
+                          label: lang.points,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Divider
+              Divider(color: Colors.white.withOpacity(0.1)),
+              
+              // Members Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.group, color: Color(0xFFFF006E), size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      isArabic ? 'الأعضاء' : 'Team Members',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Members List
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: team.members.length,
+                  itemBuilder: (context, index) {
+                    final member = team.members[index];
+                    final isOwner = member.role == 'owner';
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: isOwner
+                            ? Border.all(color: const Color(0xFFFFD700).withOpacity(0.5))
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          // Member Avatar
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: isOwner
+                                    ? [const Color(0xFFFFD700), const Color(0xFFFFB800)]
+                                    : [const Color(0xFFFF006E), const Color(0xFFFF4D00)],
+                              ),
+                            ),
+                            child: member.user?.avatarUrl != null && member.user!.avatarUrl!.isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      member.user!.avatarUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Center(
+                                        child: Text(
+                                          (member.user?.fullName ?? member.user?.username ?? 'U')[0].toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Text(
+                                      (member.user?.fullName ?? member.user?.username ?? 'U')[0].toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(width: 12),
+                          
+                          // Member Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      member.user?.fullName ?? member.user?.username ?? 'Unknown',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    if (isOwner) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFD700),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          isArabic ? 'القائد' : 'Leader',
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '@${member.user?.username ?? 'unknown'}',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Member Stats
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.touch_app,
+                                    size: 14,
+                                    color: Colors.white.withOpacity(0.5),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${member.user?.totalClicks ?? 0}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 14,
+                                    color: const Color(0xFFFFD700).withOpacity(0.7),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${member.points}',
+                                    style: TextStyle(
+                                      color: const Color(0xFFFFD700).withOpacity(0.9),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              
+              // Join Button (if not in any team)
+              if (teamProvider.userTeam == null)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: team.isFull
+                          ? null
+                          : const LinearGradient(
+                              colors: [Color(0xFFFF006E), Color(0xFFFF4D00)],
+                            ),
+                      color: team.isFull ? Colors.grey : null,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ElevatedButton(
+                      onPressed: team.isFull
+                          ? null
+                          : () {
+                              Navigator.pop(context);
+                              _confirmJoinTeam(context, lang, teamProvider, team);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        team.isFull
+                            ? (isArabic ? 'الفريق ممتلئ' : 'Team is Full')
+                            : (isArabic ? 'انضم للفريق' : 'Join This Team'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem({required IconData icon, required String value, required String label}) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: const Color(0xFFFF006E), size: 20),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 
