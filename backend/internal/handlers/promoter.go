@@ -74,11 +74,62 @@ func (h *PromoterHandler) servePromoterPage(c *gin.Context, user models.AfftokUs
 }
 
 func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.Offer, totalOffers int, totalClicks int) string {
+	// Try to read the template file and inject data
 	filePath := "public/promoter_landing.html"
 	if _, err := os.Stat(filePath); err == nil {
 		data, err := ioutil.ReadFile(filePath)
 		if err == nil {
-			return string(data)
+			html := string(data)
+			
+			// Build offers JSON
+			offersJSON := "["
+			for i, offer := range offers {
+				if i > 0 {
+					offersJSON += ","
+				}
+				offersJSON += fmt.Sprintf(`{"id":"%s","title":"%s","description":"%s","image_url":"%s","category":"%s","payout":%d,"payout_type":"%s"}`,
+					offer.ID.String(),
+					strings.ReplaceAll(offer.Title, `"`, `\"`),
+					strings.ReplaceAll(offer.Description, `"`, `\"`),
+					offer.ImageURL,
+					offer.Category,
+					offer.Payout,
+					offer.PayoutType)
+			}
+			offersJSON += "]"
+			
+			// Get promoter rating
+			promoterRating := h.GetPromoterRating(user.ID)
+			
+			// Inject promoter data into the page
+			dataScript := fmt.Sprintf(`<script>
+				window.promoterId = "%s";
+				window.promoterData = {
+					id: "%s",
+					name: "%s",
+					username: "%s",
+					bio: "%s",
+					avatar: "%s",
+					rating: %.1f,
+					totalClicks: %d,
+					totalOffers: %d
+				};
+				window.offersData = %s;
+			</script>`,
+				user.ID.String(),
+				user.ID.String(),
+				strings.ReplaceAll(user.FullName, `"`, `\"`),
+				user.Username,
+				strings.ReplaceAll(user.Bio, `"`, `\"`),
+				user.AvatarURL,
+				promoterRating,
+				totalClicks,
+				totalOffers,
+				offersJSON)
+			
+			// Insert the data script before </head>
+			html = strings.Replace(html, "</head>", dataScript+"</head>", 1)
+			return html
 		}
 	}
 
@@ -203,7 +254,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 		header {
 			background: rgba(15, 15, 15, 0.8);
-			border-bottom: 1px solid #333333;
+			border-bottom: 1px solid var(--border-color);
 			padding: 12px 0;
 			position: sticky;
 			top: 0;
@@ -221,7 +272,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			font-size: 32px;
 			font-weight: 700;
 			letter-spacing: -0.5px;
-			background: linear-gradient(135deg, #FF006E, #FF4D00);
+			background: linear-gradient(135deg, var(--primary), var(--secondary));
 			-webkit-background-clip: text;
 			-webkit-text-fill-color: transparent;
 			background-clip: text;
@@ -230,10 +281,10 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 		.language-toggle {
 			padding: 8px 16px;
-			background: #1a1a1a;
-			border: 1px solid #333333;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
 			border-radius: 8px;
-			color: #ffffff;
+			color: var(--text-primary);
 			cursor: pointer;
 			transition: all 0.3s ease;
 			font-weight: 600;
@@ -242,15 +293,15 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 		.language-toggle:hover {
 			background: rgba(255, 0, 110, 0.1);
-			border-color: #FF006E;
-			color: #FF006E;
+			border-color: var(--primary);
+			color: var(--primary);
 		}
 
 		.profile-section {
 			text-align: center;
 			padding: 40px 0;
 			background: linear-gradient(180deg, rgba(255, 0, 110, 0.05) 0%%, transparent 100%%);
-			border-bottom: 1px solid #333333;
+			border-bottom: 1px solid var(--border-color);
 		}
 
 		.profile-image {
@@ -258,7 +309,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			height: 80px;
 			border-radius: 50%%;
 			margin: 0 auto 16px;
-			border: 3px solid #FF006E;
+			border: 3px solid var(--primary);
 			object-fit: cover;
 			box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);
 		}
@@ -271,13 +322,13 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		}
 
 		.profile-username {
-			color: #a8a8a8;
+			color: var(--text-secondary);
 			font-size: 14px;
 			margin-bottom: 12px;
 		}
 
 		.profile-tagline {
-			color: #FF006E;
+			color: var(--primary);
 			font-size: 14px;
 			font-weight: 600;
 			margin-bottom: 12px;
@@ -286,9 +337,9 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		.member-badge {
 			display: inline-block;
 			padding: 6px 14px;
-			border: 2px solid #FF4D00;
+			border: 2px solid var(--secondary);
 			border-radius: 20px;
-			color: #FF4D00;
+			color: var(--secondary);
 			font-size: 12px;
 			font-weight: 600;
 			margin-bottom: 16px;
@@ -309,7 +360,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 		.rating-value {
 			font-weight: 600;
-			color: #ffffff;
+			color: var(--text-primary);
 		}
 
 		.stats-grid {
@@ -320,8 +371,8 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		}
 
 		.stat-card {
-			background: #1a1a1a;
-			border: 1px solid #333333;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
 			border-radius: 12px;
 			padding: 16px;
 			text-align: center;
@@ -330,12 +381,12 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		.stat-value {
 			font-size: 24px;
 			font-weight: 700;
-			color: #FF006E;
+			color: var(--primary);
 		}
 
 		.stat-label {
 			font-size: 12px;
-			color: #a8a8a8;
+			color: var(--text-secondary);
 			margin-top: 8px;
 		}
 
@@ -347,19 +398,19 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			font-size: 24px;
 			font-weight: 700;
 			margin-bottom: 24px;
-			color: #ffffff;
+			color: var(--text-primary);
 		}
 
 		.bio-section {
-			background: #1a1a1a;
-			border: 1px solid #333333;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
 			border-radius: 12px;
 			padding: 24px;
 			margin-bottom: 40px;
 		}
 
 		.bio-text {
-			color: #a8a8a8;
+			color: var(--text-secondary);
 			line-height: 1.8;
 		}
 
@@ -370,8 +421,8 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		}
 
 		.offer-card {
-			background: #1a1a1a;
-			border: 1px solid #333333;
+			background: var(--bg-card);
+			border: 1px solid var(--border-color);
 			border-radius: 12px;
 			overflow: hidden;
 			transition: all 0.3s ease;
@@ -379,7 +430,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 		.offer-card:hover {
 			transform: translateY(-4px);
-			border-color: #FF006E;
+			border-color: var(--primary);
 			box-shadow: 0 8px 24px rgba(255, 0, 110, 0.2);
 		}
 
@@ -396,7 +447,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			top: 12px;
 			right: 12px;
 			background: rgba(0, 0, 0, 0.7);
-			color: #ffffff;
+			color: var(--text-primary);
 			padding: 6px 12px;
 			border-radius: 20px;
 			font-size: 11px;
@@ -412,13 +463,13 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 			font-size: 16px;
 			font-weight: 600;
 			margin-bottom: 8px;
-			color: #ffffff;
+			color: var(--text-primary);
 			line-height: 1.3;
 		}
 
 		.offer-description {
 			font-size: 13px;
-			color: #a8a8a8;
+			color: var(--text-secondary);
 			margin-bottom: 12px;
 			line-height: 1.4;
 			display: -webkit-box;
@@ -428,8 +479,8 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		}
 
 		.offer-commission {
-			background: linear-gradient(135deg, #8E2DE2, #4A00E0);
-			color: #ffffff;
+			background: linear-gradient(135deg, var(--accent), var(--dark-accent));
+			color: var(--text-primary);
 			padding: 8px 12px;
 			border-radius: 8px;
 			font-size: 12px;
@@ -441,8 +492,8 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		.get-link-btn {
 			width: 100%%;
 			padding: 10px;
-			background: linear-gradient(135deg, #8E2DE2, #4A00E0);
-			color: #ffffff;
+			background: linear-gradient(135deg, var(--accent), var(--dark-accent));
+			color: var(--text-primary);
 			border: none;
 			border-radius: 8px;
 			font-size: 14px;
@@ -460,11 +511,11 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 		}
 
 		footer {
-			background: #0a0a0a;
-			border-top: 1px solid #333333;
+			background: var(--bg-dark);
+			border-top: 1px solid var(--border-color);
 			padding: 40px 0;
 			text-align: center;
-			color: #a8a8a8;
+			color: var(--text-secondary);
 			font-size: 14px;
 		}
 
@@ -516,7 +567,7 @@ func (h *PromoterHandler) generateHTML(user models.AfftokUser, offers []models.O
 
 	<div class="profile-section">
 		<div class="container">
-			<div style="width: 80px; height: 80px; border-radius: 50%%; margin: 0 auto 16px; background: linear-gradient(135deg, #8E2DE2, #4A00E0); display: flex; align-items: center; justify-content: center; font-size: 36px; border: 3px solid #FF006E;">%s</div>
+			<div style="width: 80px; height: 80px; border-radius: 50%%; margin: 0 auto 16px; background: linear-gradient(135deg, var(--accent), var(--dark-accent)); display: flex; align-items: center; justify-content: center; font-size: 36px; border: 3px solid var(--primary);">%s</div>
 			<h1 class="profile-name">%s</h1>
 			<p class="profile-username">@%s</p>
 			<div class="rating-section">
