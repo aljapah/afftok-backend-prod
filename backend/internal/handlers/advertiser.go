@@ -598,6 +598,12 @@ func (h *AdvertiserHandler) GetDashboard(c *gin.Context) {
 		return
 	}
 
+	// Auto-fix: If user has company_name but role is not advertiser, update it
+	if user.CompanyName != "" && user.Role != "advertiser" {
+		h.db.Model(&user).Update("role", "advertiser")
+		user.Role = "advertiser"
+	}
+
 	// Count offers by status
 	var totalOffers int64
 	var pendingOffers int64
