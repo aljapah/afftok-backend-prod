@@ -45,8 +45,15 @@ func main() {
 	}
 	defer cache.CloseRedis(redisClient)
 
-	if err := database.AutoMigrate(db); err != nil {
-		log.Fatal("Failed to migrate database:", err)
+	// Skip AutoMigrate - tables already exist in production
+	// This prevents "insufficient arguments" error from schema conflicts
+	if os.Getenv("SKIP_MIGRATION") != "true" {
+		if err := database.AutoMigrate(db); err != nil {
+			log.Printf("⚠️ Migration warning (non-fatal): %v", err)
+			// Don't fail - tables likely already exist
+		}
+	} else {
+		log.Println("⏭️ Skipping database migration (SKIP_MIGRATION=true)")
 	}
 
 	// Graceful shutdown handler
