@@ -874,6 +874,20 @@
             document.getElementById('profile-name').textContent = promoterData.name;
             document.getElementById('profile-username').textContent = '@' + promoterData.username.replace('@', '');
             
+            // Update avatar
+            const avatarImg = document.getElementById('profile-image');
+            if (avatarImg && promoterData.avatar) {
+                avatarImg.src = promoterData.avatar;
+                avatarImg.style.display = 'block';
+            }
+            
+            // Update bio
+            const bioEl = document.getElementById('profile-bio');
+            if (bioEl && promoterData.bio) {
+                bioEl.textContent = promoterData.bio;
+                bioEl.style.display = 'block';
+            }
+            
             const ratingStars = '★'.repeat(Math.round(promoterData.rating)) + '☆'.repeat(5 - Math.round(promoterData.rating));
             document.getElementById('rating-stars').textContent = ratingStars;
         }
