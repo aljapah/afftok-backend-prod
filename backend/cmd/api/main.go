@@ -293,7 +293,7 @@ func main() {
 				invite.GET("/my-link", inviteHandler.GetMyInviteLink)           // Get personal invite link
 				invite.POST("/check-pending", inviteHandler.CheckPendingInvite) // Check for pending invite
 				invite.POST("/auto-join", inviteHandler.AutoJoinByInvite)       // Auto-join after registration
-				invite.POST("/:id/claim", inviteHandler.ClaimInvite)            // Claim specific invite
+				invite.POST("/by-id/:id/claim", inviteHandler.ClaimInvite)      // Claim specific invite by ID
 				invite.POST("/claim/:code", inviteHandler.ClaimInviteByCode)    // Claim by code directly
 			}
 
