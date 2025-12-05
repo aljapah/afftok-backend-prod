@@ -252,6 +252,9 @@ func main() {
 			protected.GET("/stats/me", userHandler.GetMyStats)
 			protected.GET("/stats/daily", userHandler.GetDailyStats)
 
+			// Leaderboard
+			protected.GET("/leaderboard", userHandler.GetLeaderboard)
+
 			protected.POST("/offers/:id/join", offerHandler.JoinOffer)
 			protected.GET("/offers/my", offerHandler.GetMyOffers)
 

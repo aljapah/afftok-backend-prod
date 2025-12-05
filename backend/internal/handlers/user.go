@@ -219,3 +219,93 @@ func (h *UserHandler) GetDailyStats(c *gin.Context) {
 		"days":    days,
 	})
 }
+
+// GetLeaderboard returns top 10 promoters and current user's rank
+func (h *UserHandler) GetLeaderboard(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	currentUserID := userID.(uuid.UUID)
+
+	limit := 10
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	// Get top users by points (clicks * 2 + conversions * 20)
+	var leaderboard []struct {
+		ID               uuid.UUID `json:"id"`
+		Username         string    `json:"username"`
+		FullName         string    `json:"full_name"`
+		AvatarURL        string    `json:"avatar_url"`
+		Country          string    `json:"country"`
+		TotalClicks      int       `json:"total_clicks"`
+		TotalConversions int       `json:"total_conversions"`
+		Points           int       `json:"points"`
+		Rank             int       `json:"rank"`
+	}
+
+	// Query top users ordered by calculated points
+	err := h.db.Model(&models.AfftokUser{}).
+		Select(`
+			id, 
+			username, 
+			full_name, 
+			avatar_url, 
+			COALESCE(country, '') as country,
+			total_clicks, 
+			total_conversions,
+			(total_clicks * 2 + total_conversions * 20) as points
+		`).
+		Where("role = ? OR role IS NULL OR role = ''", "user"). // Only promoters
+		Where("status = ?", "active").
+		Order("points DESC").
+		Limit(limit).
+		Scan(&leaderboard).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to fetch leaderboard",
+		})
+		return
+	}
+
+	// Add rank numbers
+	for i := range leaderboard {
+		leaderboard[i].Rank = i + 1
+	}
+
+	// Get current user's rank
+	var myRank struct {
+		Rank             int    `json:"rank"`
+		TotalClicks      int    `json:"total_clicks"`
+		TotalConversions int    `json:"total_conversions"`
+		Points           int    `json:"points"`
+		Country          string `json:"country"`
+	}
+
+	// Get current user's stats
+	var currentUser models.AfftokUser
+	if err := h.db.First(&currentUser, "id = ?", currentUserID).Error; err == nil {
+		myRank.TotalClicks = currentUser.TotalClicks
+		myRank.TotalConversions = currentUser.TotalConversions
+		myRank.Points = currentUser.TotalClicks*2 + currentUser.TotalConversions*20
+		myRank.Country = currentUser.Country
+
+		// Calculate rank
+		var usersAbove int64
+		h.db.Model(&models.AfftokUser{}).
+			Where("(total_clicks * 2 + total_conversions * 20) > ?", myRank.Points).
+			Where("role = ? OR role IS NULL OR role = ''", "user").
+			Where("status = ?", "active").
+			Count(&usersAbove)
+		myRank.Rank = int(usersAbove) + 1
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":     true,
+		"leaderboard": leaderboard,
+		"my_rank":     myRank,
+	})
+}
