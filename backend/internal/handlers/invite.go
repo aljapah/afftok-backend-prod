@@ -525,9 +525,8 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
                 <a href="mailto:support@afftokapp.com">support@afftokapp.com</a>
             </div>
             <div class="footer-links">
-                <a href="https://afftokapp.com/privacy" class="footer-link" data-lang="privacy">سياسة الخصوصية</a>
-                <a href="https://afftokapp.com/terms" class="footer-link" data-lang="terms">شروط الاستخدام</a>
-                <a href="https://afftokapp.com/contact" class="footer-link" data-lang="contact">تواصل معنا</a>
+                <a href="https://afftokapp.com/privacy.html" class="footer-link" data-lang="privacy" target="_blank">سياسة الخصوصية</a>
+                <a href="https://afftokapp.com/terms.html" class="footer-link" data-lang="terms" target="_blank">شروط الاستخدام</a>
             </div>
             <p class="copyright" data-lang="copyright">© 2025 AffTok. جميع الحقوق محفوظة.</p>
         </div>
@@ -551,7 +550,6 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
                 support: 'للدعم والاستفسارات:',
                 privacy: 'سياسة الخصوصية',
                 terms: 'شروط الاستخدام',
-                contact: 'تواصل معنا',
                 copyright: '© 2025 AffTok. جميع الحقوق محفوظة.'
             },
             en: {
@@ -568,7 +566,6 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
                 support: 'For support and inquiries:',
                 privacy: 'Privacy Policy',
                 terms: 'Terms of Use',
-                contact: 'Contact Us',
                 copyright: '© 2025 AffTok. All rights reserved.'
             }
         };
