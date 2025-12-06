@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
 	"github.com/gin-gonic/gin"
@@ -29,8 +30,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
 	var team models.Team
 	if err := h.db.Preload("Owner").Preload("Members.User").Where("invite_code = ?", code).First(&team).Error; err != nil {
 		// Return error page
-		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte(`
-<!DOCTYPE html>
+		errorHTML := `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -59,7 +59,8 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
         <p>هذا الرابط غير موجود أو منتهي الصلاحية</p>
     </div>
 </body>
-</html>`))
+</html>`
+		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte(errorHTML))
 		return
 	}
 
@@ -86,34 +87,36 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
 			if name == "" {
 				name = member.User.Username
 			}
-			membersHTML += fmt.Sprintf(`
-            <div class="member">
-                <div class="member-avatar">%s</div>
+			firstChar := "?"
+			if len(name) > 0 {
+				firstChar = string([]rune(name)[0])
+			}
+			membersHTML += `<div class="member">
+                <div class="member-avatar">` + firstChar + `</div>
                 <div class="member-info">
-                    <div class="member-name">%s</div>
-                    <div class="member-role">@%s</div>
+                    <div class="member-name">` + name + `</div>
+                    <div class="member-role">@` + member.User.Username + `</div>
                 </div>
-                %s
-            </div>`, string([]rune(name)[0:1]), name, member.User.Username, roleHTML)
+                ` + roleHTML + `
+            </div>`
 		}
 	}
 
 	// Team logo or emoji
 	logoHTML := "👥"
 	if team.LogoURL != "" {
-		logoHTML = fmt.Sprintf(`<img src="%s" alt="%s">`, team.LogoURL, team.Name)
+		logoHTML = `<img src="` + team.LogoURL + `" alt="` + team.Name + `">`
 	}
 
-	// Serve beautiful landing page
-	html := fmt.Sprintf(`
-<!DOCTYPE html>
+	// Build the HTML page
+	html := `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>انضم لفريق %s - AffTok</title>
-    <meta property="og:title" content="انضم لفريق %s على AffTok">
-    <meta property="og:description" content="%s">
+    <title>انضم لفريق ` + team.Name + ` - AffTok</title>
+    <meta property="og:title" content="انضم لفريق ` + team.Name + ` على AffTok">
+    <meta property="og:description" content="` + team.Description + `">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -125,7 +128,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
         .hero {
             padding: 60px 20px;
             text-align: center;
-            background: linear-gradient(180deg, rgba(255,0,110,0.2) 0%%, transparent 100%%);
+            background: linear-gradient(180deg, rgba(255,0,110,0.2) 0%, transparent 100%);
         }
         .team-logo {
             width: 120px;
@@ -141,8 +144,8 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
             overflow: hidden;
         }
         .team-logo img {
-            width: 100%%;
-            height: 100%%;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
         h1 { font-size: 32px; margin-bottom: 12px; }
@@ -160,6 +163,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
             background: linear-gradient(135deg, #ff006e, #ff4d00);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .stat-label { font-size: 14px; opacity: 0.7; }
         .join-btn {
@@ -198,7 +202,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
         .member-avatar {
             width: 50px;
             height: 50px;
-            border-radius: 50%%;
+            border-radius: 50%;
             background: linear-gradient(135deg, #667eea, #764ba2);
             display: flex;
             align-items: center;
@@ -247,31 +251,31 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
 </head>
 <body>
     <div class="hero">
-        <div class="team-logo">%s</div>
-        <h1>%s</h1>
-        <p class="description">%s</p>
+        <div class="team-logo">` + logoHTML + `</div>
+        <h1>` + team.Name + `</h1>
+        <p class="description">` + team.Description + `</p>
         
         <div class="stats">
             <div class="stat">
-                <div class="stat-value">%d</div>
+                <div class="stat-value">` + strconv.Itoa(activeMembers) + `</div>
                 <div class="stat-label">الأعضاء</div>
             </div>
             <div class="stat">
-                <div class="stat-value">%d</div>
+                <div class="stat-value">` + strconv.Itoa(totalConversions) + `</div>
                 <div class="stat-label">التحويلات</div>
             </div>
             <div class="stat">
-                <div class="stat-value">%d</div>
+                <div class="stat-value">` + strconv.Itoa(totalClicks) + `</div>
                 <div class="stat-label">النقرات</div>
             </div>
         </div>
         
-        <a href="afftok://join/%s" class="join-btn">🚀 انضم للفريق الآن</a>
+        <a href="afftok://join/` + code + `" class="join-btn">🚀 انضم للفريق الآن</a>
     </div>
     
     <div class="members">
         <h3>أعضاء الفريق</h3>
-        %s
+        ` + membersHTML + `
     </div>
     
     <div class="download-section">
@@ -291,7 +295,7 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
     <script>
         document.querySelector('.join-btn').addEventListener('click', function(e) {
             e.preventDefault();
-            var appUrl = 'afftok://join/%s';
+            var appUrl = 'afftok://join/` + code + `';
             var storeUrl = /iPhone|iPad|iPod/i.test(navigator.userAgent) 
                 ? 'https://apps.apple.com/app/afftok'
                 : 'https://play.google.com/store/apps/details?id=com.afftok.app';
@@ -301,13 +305,34 @@ func (h *InviteHandler) GetInviteInfo(c *gin.Context) {
         });
     </script>
 </body>
-</html>`,
-		team.Name, team.Name, team.Description,
-		logoHTML, team.Name, team.Description,
-		activeMembers, totalConversions, totalClicks,
-		code, membersHTML, code)
+</html>`
 
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(html))
+}
+
+// ValidateInvite validates an invite code (returns JSON)
+func (h *InviteHandler) ValidateInvite(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invite code is required"})
+		return
+	}
+
+	var team models.Team
+	if err := h.db.Where("invite_code = ?", code).First(&team).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"valid":   false,
+			"message": "Invite link not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"valid":   true,
+		"message": "Invite link is valid",
+		"code":    code,
+		"team_id": team.ID,
+	})
 }
 
 // RecordInviteVisit records a visit to an invite link
@@ -329,8 +354,8 @@ func (h *InviteHandler) GetMyInviteLink(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"user_id":     userID,
-		"invite_link": "https://go.afftokapp.com/api/invite/user123",
-		"invite_code": "user123",
+		"invite_link": fmt.Sprintf("https://go.afftokapp.com/api/invite/%v", userID),
+		"invite_code": fmt.Sprintf("%v", userID),
 	})
 }
 
