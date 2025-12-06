@@ -122,7 +122,7 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 		MemberCount: 1,
 		Status:      "active",
 		InviteCode:  inviteCode,
-		InviteURL:   "https://go.afftokapp.com/join/" + inviteCode,
+		InviteURL:   "https://go.afftokapp.com/api/invite/" + inviteCode,
 	}
 
 	if err := h.db.Create(&team).Error; err != nil {
@@ -465,7 +465,7 @@ func (h *TeamHandler) RegenerateInviteCode(c *gin.Context) {
 	// Generate new invite code
 	newCode := generateInviteCode()
 	team.InviteCode = newCode
-	team.InviteURL = "https://go.afftokapp.com/join/" + newCode
+	team.InviteURL = "https://go.afftokapp.com/api/invite/" + newCode
 	h.db.Save(&team)
 
 	c.JSON(http.StatusOK, gin.H{
