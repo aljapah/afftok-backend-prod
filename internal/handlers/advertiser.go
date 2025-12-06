@@ -764,3 +764,77 @@ func (h *AdvertiserHandler) GetConversions(c *gin.Context) {
 	})
 }
 
+// GetPromoters returns all promoters who joined advertiser's offers
+// GET /api/advertiser/promoters
+func (h *AdvertiserHandler) GetPromoters(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Get all offers by this advertiser
+	var offers []models.Offer
+	if err := h.db.Where("advertiser_id = ?", userID).Find(&offers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch offers"})
+		return
+	}
+
+	if len(offers) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"promoters": []interface{}{},
+			"total":     0,
+		})
+		return
+	}
+
+	// Get offer IDs
+	var offerIDs []uuid.UUID
+	offerMap := make(map[uuid.UUID]string)
+	for _, offer := range offers {
+		offerIDs = append(offerIDs, offer.ID)
+		offerMap[offer.ID] = offer.Title
+	}
+
+	// Get all user_offers for these offers
+	var userOffers []models.UserOffer
+	if err := h.db.Where("offer_id IN ?", offerIDs).Preload("User").Find(&userOffers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch promoters"})
+		return
+	}
+
+	// Build response
+	type PromoterResponse struct {
+		Username      string    `json:"username"`
+		FullName      string    `json:"full_name"`
+		Email         string    `json:"email"`
+		Clicks        int       `json:"clicks"`
+		Conversions   int       `json:"conversions"`
+		PaymentMethod string    `json:"payment_method"`
+		OfferTitle    string    `json:"offer_title"`
+		JoinedAt      time.Time `json:"joined_at"`
+	}
+
+	var promoters []PromoterResponse
+	for _, uo := range userOffers {
+		if uo.User.ID == uuid.Nil {
+			continue
+		}
+		promoters = append(promoters, PromoterResponse{
+			Username:      uo.User.Username,
+			FullName:      uo.User.FullName,
+			Email:         uo.User.Email,
+			Clicks:        uo.TotalClicks,
+			Conversions:   uo.TotalConversions,
+			PaymentMethod: uo.User.PaymentMethod,
+			OfferTitle:    offerMap[uo.OfferID],
+			JoinedAt:      uo.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"promoters": promoters,
+		"total":     len(promoters),
+	})
+}
+

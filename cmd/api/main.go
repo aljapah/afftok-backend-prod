@@ -329,13 +329,14 @@ func main() {
 			// ========== Advertiser Routes ==========
 			advertiser := protected.Group("/advertiser")
 			{
-				advertiser.GET("/dashboard", advertiserHandler.GetDashboard)
-				advertiser.GET("/offers", advertiserHandler.GetMyOffers)
-				advertiser.POST("/offers", advertiserHandler.CreateOffer)
-				advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
-				advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
-				advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
-				advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
+			advertiser.GET("/dashboard", advertiserHandler.GetDashboard)
+			advertiser.GET("/offers", advertiserHandler.GetMyOffers)
+			advertiser.POST("/offers", advertiserHandler.CreateOffer)
+			advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
+			advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
+			advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
+			advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
+			advertiser.GET("/promoters", advertiserHandler.GetPromoters)
 			}
 
 			admin := protected.Group("/admin")
