@@ -50,6 +50,39 @@ func (h *PromoterHandler) GetPromoterPageByUsername(c *gin.Context) {
 	h.servePromoterPage(c, user)
 }
 
+// GetPromoterPageByCode serves landing page by unique code
+func (h *PromoterHandler) GetPromoterPageByCode(c *gin.Context) {
+	code := c.Param("code")
+
+	var user models.AfftokUser
+	if err := h.db.Where("unique_code = ?", code).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid referral code"})
+		return
+	}
+
+	h.servePromoterPage(c, user)
+}
+
+// GetPromoterByCode returns JSON data for a promoter by unique code
+func (h *PromoterHandler) GetPromoterByCode(c *gin.Context) {
+	code := c.Param("code")
+
+	var user models.AfftokUser
+	if err := h.db.Where("unique_code = ?", code).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid referral code"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":          user.ID,
+		"username":    user.Username,
+		"full_name":   user.FullName,
+		"avatar_url":  user.AvatarURL,
+		"bio":         user.Bio,
+		"unique_code": user.UniqueCode,
+	})
+}
+
 func (h *PromoterHandler) servePromoterPage(c *gin.Context, user models.AfftokUser) {
 	var offers []models.Offer
 	if err := h.db.Where("status = ?", "active").Order("created_at DESC").Find(&offers).Error; err != nil {
