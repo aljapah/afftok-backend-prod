@@ -202,6 +202,46 @@ class OfferService {
     }
   }
 
+  /// Get a single offer by ID
+  Future<Map<String, dynamic>> getOfferById(String offerId) async {
+    try {
+      print('[OfferService] Fetching offer by ID: $offerId');
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/api/offers/$offerId'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(ApiConfig.connectTimeout);
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final offerJson = data['offer'] as Map<String, dynamic>?;
+        
+        if (offerJson != null) {
+          return {
+            'success': true,
+            'offer': Offer.fromJson(offerJson),
+          };
+        } else {
+          return {
+            'success': false,
+            'error': 'Offer not found',
+          };
+        }
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to load offer: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      print('[OfferService] Exception: $e');
+      return {
+        'success': false,
+        'error': 'Error fetching offer: $e',
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> getOfferStats(String offerId) async {
     try {
       final result = await _apiService.get('/api/offers/$offerId/stats');

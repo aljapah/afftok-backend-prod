@@ -490,6 +490,10 @@ class AppLocalizations {
       'contactPrivacyDesc': 'For questions about this Privacy Policy or your data rights:',
       'emailPrivacy': 'Email: privacy@afftok.com',
       'websitePrivacy': 'Website: www.afftok.com/privacy',
+      'requestDeletion': 'Request Data Deletion',
+      'exportData': 'Export My Data',
+      'contactUsPrivacy': 'Contact Us',
+      'contactUsPrivacyDesc': 'For privacy questions, contact us at privacy@afftok.com',
     },
     'ar': {
       // General
@@ -969,6 +973,10 @@ class AppLocalizations {
       'contactPrivacyDesc': 'للاستفسارات حول سياسة الخصوصية هذه أو حقوق بياناتك:',
       'emailPrivacy': 'البريد الإلكتروني: privacy@afftok.com',
       'websitePrivacy': 'الموقع الإلكتروني: www.afftok.com/privacy',
+      'requestDeletion': 'طلب حذف البيانات',
+      'exportData': 'تصدير بياناتي',
+      'contactUsPrivacy': 'اتصل بنا',
+      'contactUsPrivacyDesc': 'لأسئلة الخصوصية، تواصل معنا على privacy@afftok.com',
     },
   };
 
@@ -1452,6 +1460,12 @@ class AppLocalizations {
   String get websitePrivacy => translate('websitePrivacy');
   String get selectPreferredCategories => translate('selectPreferredCategories');
   String get learnMoreAboutApp => translate('learnMoreAboutApp');
+  
+  // Privacy Policy Screen - Missing getters
+  String get requestDeletion => translate('requestDeletion');
+  String get exportData => translate('exportData');
+  String get contactUsPrivacy => translate('contactUsPrivacy');
+  String get contactUsPrivacyDesc => translate('contactUsPrivacyDesc');
 }
 
 class _AppLocalizationsDelegate
