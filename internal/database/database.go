@@ -136,9 +136,31 @@ func AutoMigrate(db *gorm.DB) error {
 
 	// Create additional indexes for performance
 	createIndexes(db)
+	
+	// Generate unique codes for existing users who don't have one
+	generateMissingUniqueCodes(db)
 
 	log.Println("✅ Database migration completed successfully")
 	return nil
+}
+
+// generateMissingUniqueCodes generates unique_code for users who don't have one
+func generateMissingUniqueCodes(db *gorm.DB) {
+	var users []models.AfftokUser
+	db.Where("unique_code IS NULL OR unique_code = ''").Find(&users)
+	
+	for _, user := range users {
+		user.UniqueCode = models.GenerateUniqueCode()
+		if err := db.Model(&user).Update("unique_code", user.UniqueCode).Error; err != nil {
+			log.Printf("⚠️ Failed to generate unique code for user %s: %v", user.Username, err)
+		} else {
+			log.Printf("✅ Generated unique code %s for user %s", user.UniqueCode, user.Username)
+		}
+	}
+	
+	if len(users) > 0 {
+		log.Printf("✅ Generated unique codes for %d existing users", len(users))
+	}
 }
 
 // createIndexes creates additional indexes for tracking performance

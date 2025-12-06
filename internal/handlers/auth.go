@@ -113,6 +113,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		Status:       "active",
 		Points:       0,
 		Level:        1,
+		UniqueCode:   models.GenerateUniqueCode(), // Generate unique referral code
 		// Advertiser-specific fields
 		CompanyName:  req.CompanyName,
 		Phone:        req.Phone,

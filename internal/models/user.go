@@ -1,6 +1,8 @@
 package models
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,6 +26,12 @@ type AfftokUser struct {
 	TotalEarnings    int       `gorm:"default:0" json:"total_earnings"`
 	CreatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+	
+	// Unique referral code (8 random hex chars) - for professional short links
+	UniqueCode       string    `gorm:"type:varchar(16);uniqueIndex" json:"unique_code,omitempty"`
+	
+	// Payment method for receiving earnings
+	PaymentMethod    string    `gorm:"type:text" json:"payment_method,omitempty"`
 
 	// Advertiser-specific fields (only used when Role = "advertiser")
 	CompanyName string `gorm:"type:varchar(100)" json:"company_name,omitempty"`
@@ -84,9 +92,19 @@ func (u *AfftokUser) ConversionRate() float64 {
 	return (float64(u.TotalConversions) / float64(u.TotalClicks)) * 100
 }
 
-// PersonalLink returns the user's personal link
+// PersonalLink returns the user's personal link (uses unique code if available)
 func (u *AfftokUser) PersonalLink() string {
-	return "afftok.com/u/" + u.Username
+	if u.UniqueCode != "" {
+		return "go.afftokapp.com/r/" + u.UniqueCode
+	}
+	return "go.afftokapp.com/u/" + u.Username
+}
+
+// GenerateUniqueCode generates a random 8-character hex code
+func GenerateUniqueCode() string {
+	bytes := make([]byte, 4)
+	rand.Read(bytes)
+	return hex.EncodeToString(bytes)
 }
 
 // AdminUser represents an admin panel user
