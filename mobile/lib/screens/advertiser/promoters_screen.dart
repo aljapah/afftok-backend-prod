@@ -31,7 +31,18 @@ class _PromotersScreenState extends State<PromotersScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final response = await _advertiserService.getPromoters(authProvider.token!);
+      final token = authProvider.token;
+      
+      // Check if token is null or empty
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _error = 'Not authenticated. Please login again.';
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      final response = await _advertiserService.getPromoters(token);
       
       if (mounted) {
         setState(() {
@@ -42,7 +53,7 @@ class _PromotersScreenState extends State<PromotersScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = e.toString().replaceAll('Exception: ', '');
           _isLoading = false;
         });
       }

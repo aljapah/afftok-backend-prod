@@ -165,15 +165,25 @@ class AdvertiserService {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Session expired. Please login again.');
+      } else if (response.statusCode == 403) {
+        throw Exception('Access denied. You must be an advertiser.');
       } else {
-        throw Exception('Failed to load promoters: ${response.statusCode}');
+        final errorBody = response.body.isNotEmpty ? json.decode(response.body) : {};
+        throw Exception(errorBody['error'] ?? 'Failed to load promoters: ${response.statusCode}');
       }
+    } on http.ClientException {
+      throw Exception('Network error. Please check your connection.');
     } catch (e) {
-      throw Exception('Error loading promoters: $e');
+      if (e.toString().contains('TimeoutException')) {
+        throw Exception('Request timed out. Please try again.');
+      }
+      rethrow;
     }
   }
 }
