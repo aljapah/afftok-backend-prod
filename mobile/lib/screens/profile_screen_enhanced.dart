@@ -406,8 +406,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
 
   Widget _buildPersonalLinkCard(BuildContext context, User user, AppLocalizations lang) {
     // Unique link with unique code (falls back to username if no code)
-    final uniqueCode = user.uniqueCode ?? user.username;
-    final uniqueLink = 'https://afftok.com/r/$uniqueCode';
+    final uniqueCode = user.uniqueCode;
+    final uniqueLink = (uniqueCode != null && uniqueCode.isNotEmpty)
+        ? 'https://afftok-backend-prod-production.up.railway.app/api/r/$uniqueCode'
+        : 'https://afftok-backend-prod-production.up.railway.app/api/promoter/user/${user.username}';
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1141,8 +1143,10 @@ class _ProfileScreenEnhancedState extends State<ProfileScreenEnhanced> {
   }
 
   static void _showQRCodeDialog(BuildContext context, User user, AppLocalizations lang) {
-    final uniqueCode = user.uniqueCode ?? user.username;
-    final uniqueLink = 'https://afftok.com/r/$uniqueCode';
+    final uniqueCode = user.uniqueCode;
+    final uniqueLink = (uniqueCode != null && uniqueCode.isNotEmpty)
+        ? 'https://afftok-backend-prod-production.up.railway.app/api/r/$uniqueCode'
+        : 'https://afftok-backend-prod-production.up.railway.app/api/promoter/user/${user.username}';
     
     showDialog(
       context: context,
