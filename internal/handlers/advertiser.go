@@ -672,3 +672,95 @@ func (h *AdvertiserHandler) GetDashboard(c *gin.Context) {
 	})
 }
 
+// GetConversions returns all conversions for the advertiser's offers
+// GET /api/advertiser/conversions
+func (h *AdvertiserHandler) GetConversions(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	advertiserID, ok := userID.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Get optional filters
+	offerID := c.Query("offer_id")
+	status := c.Query("status")
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+
+	// Build query
+	query := h.db.Table("conversions").
+		Select(`
+			conversions.id,
+			conversions.status,
+			conversions.commission,
+			conversions.converted_at,
+			conversions.external_conversion_id,
+			afftok_users.username as promoter_name,
+			afftok_users.full_name as promoter_full_name,
+			offers.id as offer_id,
+			offers.title as offer_title
+		`).
+		Joins("JOIN user_offers ON conversions.user_offer_id = user_offers.id").
+		Joins("JOIN offers ON user_offers.offer_id = offers.id").
+		Joins("JOIN afftok_users ON user_offers.user_id = afftok_users.id").
+		Where("offers.advertiser_id = ?", advertiserID)
+
+	// Apply filters
+	if offerID != "" {
+		query = query.Where("offers.id = ?", offerID)
+	}
+	if status != "" {
+		query = query.Where("conversions.status = ?", status)
+	}
+	if startDate != "" {
+		query = query.Where("conversions.converted_at >= ?", startDate)
+	}
+	if endDate != "" {
+		query = query.Where("conversions.converted_at <= ?", endDate)
+	}
+
+	query = query.Order("conversions.converted_at DESC")
+
+	var conversions []map[string]interface{}
+	if err := query.Find(&conversions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch conversions"})
+		return
+	}
+
+	// Calculate summary
+	var totalCommission float64
+	var approvedCount, pendingCount, rejectedCount int
+	for _, conv := range conversions {
+		if commission, ok := conv["commission"].(float64); ok {
+			totalCommission += commission
+		}
+		if status, ok := conv["status"].(string); ok {
+			switch status {
+			case "approved":
+				approvedCount++
+			case "pending":
+				pendingCount++
+			case "rejected":
+				rejectedCount++
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"conversions": conversions,
+		"total":       len(conversions),
+		"summary": gin.H{
+			"total_commission": totalCommission,
+			"approved_count":   approvedCount,
+			"pending_count":    pendingCount,
+			"rejected_count":   rejectedCount,
+		},
+	})
+}
+
