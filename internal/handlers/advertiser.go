@@ -767,7 +767,7 @@ func (h *AdvertiserHandler) GetConversions(c *gin.Context) {
 // GetPromoters returns all promoters who joined advertiser's offers
 // GET /api/advertiser/promoters
 func (h *AdvertiserHandler) GetPromoters(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
