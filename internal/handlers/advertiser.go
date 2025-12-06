@@ -828,7 +828,7 @@ func (h *AdvertiserHandler) GetPromoters(c *gin.Context) {
 			Conversions:   uo.TotalConversions,
 			PaymentMethod: uo.User.PaymentMethod,
 			OfferTitle:    offerMap[uo.OfferID],
-			JoinedAt:      uo.CreatedAt,
+			JoinedAt:      uo.JoinedAt,
 		})
 	}
 
