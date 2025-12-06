@@ -80,6 +80,18 @@ func main() {
 
 	router.Static("/public", "./public")
 
+	// Initialize promoter handler early for short links
+	promoterHandlerEarly := handlers.NewPromoterHandler(db)
+	
+	// ============================================
+	// SHORT PROFESSIONAL REFERRAL LINKS (ROOT LEVEL)
+	// ============================================
+	// go.afftokapp.com/@username - Landing page by username
+	// go.afftokapp.com/r/abc123  - Landing page by unique code
+	router.GET("/@:username", promoterHandlerEarly.GetPromoterPageByUsername)
+	router.GET("/r/:code", promoterHandlerEarly.GetPromoterPageByCode)
+	router.GET("/ref/:code", promoterHandlerEarly.GetPromoterByCode) // JSON data
+
 	authHandler := handlers.NewAuthHandler(db)
 	userHandler := handlers.NewUserHandler(db)
 	offerHandler := handlers.NewOfferHandler(db)
