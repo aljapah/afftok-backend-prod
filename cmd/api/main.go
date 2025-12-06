@@ -245,8 +245,13 @@ func main() {
 		// Click tracking with bot detection and rate limiting
 		api.GET("/c/:id", middleware.BotDetectionMiddleware(), clickHandler.TrackClick)
 		api.GET("/promoter/:id", promoterHandler.GetPromoterPage)
-		api.GET("/promoter/user/:username", promoterHandler.GetPromoterPageByUsername) // Public - landing page
+		api.GET("/promoter/user/:username", promoterHandler.GetPromoterPageByUsername) // Public - landing page by username
+		api.GET("/r/:code", promoterHandler.GetPromoterPageByCode)                     // Public - landing page by unique code
+		api.GET("/ref/:code", promoterHandler.GetPromoterByCode)                       // Public - JSON data by unique code
 		api.POST("/rate-promoter", promoterHandler.RatePromoter)
+		
+		// Team invite landing page (public)
+		api.GET("/join/:code", teamHandler.GetTeamLandingPage)
 
 		// Postback with security validation + API Key or JWT auth
 		api.POST("/postback", middleware.PostbackSecurityMiddleware(), middleware.APIKeyOrJWTMiddleware(), postbackHandler.HandlePostback)
