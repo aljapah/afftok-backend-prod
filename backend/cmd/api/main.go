@@ -80,6 +80,21 @@ func main() {
 
 	router.Static("/public", "./public")
 
+	// Initialize handlers early for short links
+	promoterHandlerEarly := handlers.NewPromoterHandler(db)
+	teamHandlerEarly := handlers.NewTeamHandler(db)
+	
+	// ============================================
+	// SHORT PROFESSIONAL LINKS (ROOT LEVEL)
+	// ============================================
+	// go.afftokapp.com/@username - Landing page by username
+	// go.afftokapp.com/r/abc123  - Landing page by unique code
+	// go.afftokapp.com/join/xyz  - Team invite landing page
+	router.GET("/@:username", promoterHandlerEarly.GetPromoterPageByUsername)
+	router.GET("/r/:code", promoterHandlerEarly.GetPromoterPageByCode)
+	router.GET("/ref/:code", promoterHandlerEarly.GetPromoterByCode) // JSON data
+	router.GET("/join/:code", teamHandlerEarly.GetTeamLandingPage)   // Team invite page
+
 	authHandler := handlers.NewAuthHandler(db)
 	userHandler := handlers.NewUserHandler(db)
 	offerHandler := handlers.NewOfferHandler(db)
@@ -90,9 +105,8 @@ func main() {
 	clickHandler := handlers.NewClickHandler(db)
 	contestHandler := handlers.NewContestHandler(db)
 	promoterHandler := handlers.NewPromoterHandler(db)
-	advertiserHandler := handlers.NewAdvertiserHandler(db)
 	inviteHandler := handlers.NewInviteHandler(db)
-	invoiceHandler := handlers.NewInvoiceHandler(db)
+	advertiserHandler := handlers.NewAdvertiserHandler(db)
 	observabilityHandler := handlers.NewObservabilityHandler()
 	
 	// Phase 7: Admin Observability Handlers
@@ -228,10 +242,6 @@ func main() {
 
 		// Advertiser Registration (public - no auth required)
 		api.POST("/advertiser/register", advertiserHandler.RegisterAdvertiser)
-		
-		// Team Invite System (public - for deferred deep linking)
-		api.GET("/invite/:code", inviteHandler.GetInviteInfo)
-		api.POST("/invite/:code/visit", inviteHandler.RecordInviteVisit)
 
 		// Click tracking with bot detection and rate limiting
 		api.GET("/c/:id", middleware.BotDetectionMiddleware(), clickHandler.TrackClick)
@@ -240,6 +250,10 @@ func main() {
 		api.GET("/r/:code", promoterHandler.GetPromoterPageByCode)                     // Public - landing page by unique code
 		api.GET("/ref/:code", promoterHandler.GetPromoterByCode)                       // Public - JSON data by unique code
 		api.POST("/rate-promoter", promoterHandler.RatePromoter)
+		
+		// Team invite landing page (public)
+		api.GET("/join/:code", teamHandler.GetTeamLandingPage)
+		api.GET("/invite/:code", inviteHandler.GetInviteInfo) // Beautiful HTML landing page
 
 		// Postback with security validation + API Key or JWT auth
 		api.POST("/postback", middleware.PostbackSecurityMiddleware(), middleware.APIKeyOrJWTMiddleware(), postbackHandler.HandlePostback)
@@ -289,16 +303,6 @@ func main() {
 				teams.DELETE("/:id", teamHandler.DeleteTeam)
 			}
 
-			// Team Invite System (protected)
-			invite := protected.Group("/invite")
-			{
-				invite.GET("/my-link", inviteHandler.GetMyInviteLink)           // Get personal invite link
-				invite.POST("/check-pending", inviteHandler.CheckPendingInvite) // Check for pending invite
-				invite.POST("/auto-join", inviteHandler.AutoJoinByInvite)       // Auto-join after registration
-				invite.POST("/by-id/:id/claim", inviteHandler.ClaimInvite)      // Claim specific invite by ID
-				invite.POST("/claim/:code", inviteHandler.ClaimInviteByCode)    // Claim by code directly
-			}
-
 			badges := protected.Group("/badges")
 			{
 				badges.GET("", badgeHandler.GetAllBadges)
@@ -327,18 +331,11 @@ func main() {
 			{
 				advertiser.GET("/dashboard", advertiserHandler.GetDashboard)
 				advertiser.GET("/offers", advertiserHandler.GetMyOffers)
-				advertiser.GET("/conversions", advertiserHandler.GetConversions)
-				advertiser.GET("/promoters", advertiserHandler.GetPromoters)
 				advertiser.POST("/offers", advertiserHandler.CreateOffer)
 				advertiser.PUT("/offers/:id", advertiserHandler.UpdateOffer)
 				advertiser.DELETE("/offers/:id", advertiserHandler.DeleteOffer)
 				advertiser.POST("/offers/:id/pause", advertiserHandler.PauseOffer)
 				advertiser.GET("/offers/:id/stats", advertiserHandler.GetOfferStats)
-				
-				// Invoices for advertisers
-				advertiser.GET("/invoices", invoiceHandler.GetMyInvoices)
-				advertiser.GET("/invoices/:id", invoiceHandler.GetInvoice)
-				advertiser.POST("/invoices/:id/confirm-payment", invoiceHandler.ConfirmPayment)
 			}
 
 			admin := protected.Group("/admin")
@@ -363,13 +360,6 @@ func main() {
 				admin.GET("/offers/pending", advertiserHandler.GetPendingOffers)
 				admin.POST("/offers/:id/approve", advertiserHandler.ApproveOffer)
 				admin.POST("/offers/:id/reject", advertiserHandler.RejectOffer)
-
-				// Invoice Management for Admin
-				admin.GET("/invoices", invoiceHandler.AdminGetAllInvoices)
-				admin.GET("/invoices/summary", invoiceHandler.AdminGetInvoiceSummary)
-				admin.POST("/invoices/generate", invoiceHandler.AdminGenerateMonthlyInvoices)
-				admin.POST("/invoices/:id/confirm", invoiceHandler.AdminConfirmPayment)
-				admin.POST("/invoices/:id/reject", invoiceHandler.AdminRejectPayment)
 
 				// Contests / Challenges Management
 				admin.GET("/contests", contestHandler.AdminGetAllContests)
@@ -764,3 +754,7 @@ func main() {
 		log.Fatal("Failed to start server:", err)
 	}
 }
+// Force redeploy Sat Dec  6 18:47:13 +03 2025
+// Rebuild trigger 1765036804
+
+// Force rebuild Sat Dec  6 19:18:00 +03 2025
