@@ -394,7 +394,7 @@ const (
 	RateLimitClicksPerHour      = 300
 	RateLimitStatsPerMinute     = 60
 	RateLimitPostbackPerMinute  = 100
-	RateLimitAuthPerMinute      = 10
+	RateLimitAuthPerMinute      = 100
 	RateLimitJoinOfferPerMinute = 20
 )
 
