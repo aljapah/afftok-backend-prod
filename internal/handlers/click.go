@@ -285,8 +285,39 @@ redirectOnly:
 		return
 	}
 
-	fmt.Printf("[Click] Redirecting to: %s\n", destinationURL)
-	c.Redirect(http.StatusFound, destinationURL)
+	// Generate click_id for tracking conversions
+	clickID := idOrCode
+	if userOffer.ID != uuid.Nil {
+		clickID = userOffer.ID.String()
+	}
+
+	// Set click_id cookie (30 days) for conversion tracking
+	c.SetCookie(
+		"afftok_click_id",    // name
+		clickID,              // value
+		30*24*60*60,          // maxAge: 30 days in seconds
+		"/",                  // path
+		"",                   // domain (empty = current domain)
+		true,                 // secure (HTTPS only)
+		false,                // httpOnly (false so JS can read it)
+	)
+
+	// Also set offer_id cookie for reference
+	c.SetCookie(
+		"afftok_offer_id",
+		offer.ID.String(),
+		30*24*60*60,
+		"/",
+		"",
+		true,
+		false,
+	)
+
+	// Append click_id to destination URL for server-side tracking
+	finalURL := appendClickID(destinationURL, clickID)
+
+	fmt.Printf("[Click] Redirecting to: %s (click_id: %s)\n", finalURL, clickID)
+	c.Redirect(http.StatusFound, finalURL)
 }
 
 // handleInvalidLink handles invalid/tampered links
@@ -482,4 +513,17 @@ func getRuleMode(rule *models.GeoRule) string {
 		return ""
 	}
 	return string(rule.Mode)
+}
+
+// appendClickID appends click_id parameter to destination URL
+func appendClickID(destinationURL, clickID string) string {
+	if clickID == "" {
+		return destinationURL
+	}
+	
+	// Check if URL already has query parameters
+	if strings.Contains(destinationURL, "?") {
+		return destinationURL + "&click_id=" + clickID + "&aff_id=" + clickID
+	}
+	return destinationURL + "?click_id=" + clickID + "&aff_id=" + clickID
 }

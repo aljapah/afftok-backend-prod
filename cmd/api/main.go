@@ -258,6 +258,24 @@ func main() {
 		// Postback with security validation + API Key or JWT auth
 		api.POST("/postback", middleware.PostbackSecurityMiddleware(), middleware.APIKeyOrJWTMiddleware(), postbackHandler.HandlePostback)
 
+		// ============================================
+		// CONVERSION TRACKING WEBHOOKS
+		// ============================================
+		conversionWebhookHandler := handlers.NewConversionWebhookHandler(db)
+		
+		// Generic postback endpoint (for custom integrations)
+		api.GET("/postback", conversionWebhookHandler.HandlePostback)
+		api.POST("/conversion/postback", conversionWebhookHandler.HandlePostback)
+		
+		// Platform-specific webhooks
+		api.POST("/webhook/shopify/:advertiser_id", conversionWebhookHandler.HandleShopifyWebhook)
+		api.POST("/webhook/salla/:advertiser_id", conversionWebhookHandler.HandleSallaWebhook)
+		api.POST("/webhook/zid/:advertiser_id", conversionWebhookHandler.HandleZidWebhook)
+		
+		// JavaScript Pixel conversion endpoint
+		api.POST("/pixel/convert", conversionWebhookHandler.HandlePixelConversion)
+		api.GET("/pixel/convert", conversionWebhookHandler.HandlePixelConversion) // For image pixel
+
 		api.GET("/offers", offerHandler.GetAllOffers)
 		api.GET("/offers/:id", offerHandler.GetOffer)
 
