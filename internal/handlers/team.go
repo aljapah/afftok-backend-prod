@@ -514,7 +514,7 @@ func (h *TeamHandler) GetTeamLandingPage(c *gin.Context) {
 	// Find team by invite code
 	var team models.Team
 	if err := h.db.Preload("Owner").Preload("Members.User").Where("invite_code = ?", code).First(&team).Error; err != nil {
-		c.HTML(http.StatusNotFound, "", `
+		c.Data(http.StatusNotFound, "text/html; charset=utf-8", []byte(`
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -544,7 +544,7 @@ func (h *TeamHandler) GetTeamLandingPage(c *gin.Context) {
         <p>هذا الرابط غير موجود أو منتهي الصلاحية</p>
     </div>
 </body>
-</html>`)
+</html>`))
 		return
 	}
 
