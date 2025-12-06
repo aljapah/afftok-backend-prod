@@ -105,6 +105,7 @@ func main() {
 	clickHandler := handlers.NewClickHandler(db)
 	contestHandler := handlers.NewContestHandler(db)
 	promoterHandler := handlers.NewPromoterHandler(db)
+	inviteHandler := handlers.NewInviteHandler(db)
 	advertiserHandler := handlers.NewAdvertiserHandler(db)
 	observabilityHandler := handlers.NewObservabilityHandler()
 	
@@ -252,6 +253,7 @@ func main() {
 		
 		// Team invite landing page (public)
 		api.GET("/join/:code", teamHandler.GetTeamLandingPage)
+		api.GET("/invite/:code", inviteHandler.GetInviteInfo) // Beautiful HTML landing page
 
 		// Postback with security validation + API Key or JWT auth
 		api.POST("/postback", middleware.PostbackSecurityMiddleware(), middleware.APIKeyOrJWTMiddleware(), postbackHandler.HandlePostback)
