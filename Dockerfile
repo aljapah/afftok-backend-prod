@@ -1,8 +1,8 @@
 FROM golang:1.23-alpine AS builder
 WORKDIR /build
-COPY backend/go.mod backend/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download
-COPY backend/ .
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server ./cmd/api
 
 FROM alpine:latest
