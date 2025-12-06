@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/aljapah/afftok-backend-prod/internal/models"
@@ -121,7 +122,7 @@ func (h *TeamHandler) CreateTeam(c *gin.Context) {
 		MemberCount: 1,
 		Status:      "active",
 		InviteCode:  inviteCode,
-		InviteURL:   "https://afftok.com/join/" + inviteCode,
+		InviteURL:   "https://go.afftokapp.com/join/" + inviteCode,
 	}
 
 	if err := h.db.Create(&team).Error; err != nil {
@@ -464,7 +465,7 @@ func (h *TeamHandler) RegenerateInviteCode(c *gin.Context) {
 	// Generate new invite code
 	newCode := generateInviteCode()
 	team.InviteCode = newCode
-	team.InviteURL = "https://afftok.com/join/" + newCode
+	team.InviteURL = "https://go.afftokapp.com/join/" + newCode
 	h.db.Save(&team)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -504,4 +505,293 @@ func (h *TeamHandler) DeleteTeam(c *gin.Context) {
 // Helper function to generate invite code
 func generateInviteCode() string {
 	return uuid.New().String()[:8]
+}
+
+// GetTeamLandingPage serves the team invite landing page (public)
+func (h *TeamHandler) GetTeamLandingPage(c *gin.Context) {
+	code := c.Param("code")
+
+	// Find team by invite code
+	var team models.Team
+	if err := h.db.Preload("Owner").Preload("Members.User").Where("invite_code = ?", code).First(&team).Error; err != nil {
+		c.HTML(http.StatusNotFound, "", `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رابط غير صالح - AffTok</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .container { text-align: center; padding: 40px; }
+        h1 { font-size: 48px; margin-bottom: 20px; }
+        p { font-size: 18px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>❌</h1>
+        <h2>رابط الدعوة غير صالح</h2>
+        <p>هذا الرابط غير موجود أو منتهي الصلاحية</p>
+    </div>
+</body>
+</html>`)
+		return
+	}
+
+	// Calculate team stats
+	var totalClicks, totalConversions int
+	activeMembers := 0
+	for _, member := range team.Members {
+		if member.Status == "active" {
+			totalClicks += member.User.TotalClicks
+			totalConversions += member.User.TotalConversions
+			activeMembers++
+		}
+	}
+
+	// Serve beautiful landing page
+	html := `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>انضم لفريق ` + team.Name + ` - AffTok</title>
+    <meta property="og:title" content="انضم لفريق ` + team.Name + ` على AffTok">
+    <meta property="og:description" content="` + team.Description + `">
+    <meta property="og:image" content="` + team.LogoURL + `">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .hero {
+            padding: 60px 20px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(255,0,110,0.2) 0%, transparent 100%);
+        }
+        .team-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #ff006e, #ff4d00);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 48px;
+            box-shadow: 0 20px 60px rgba(255,0,110,0.4);
+        }
+        .team-logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 30px;
+            object-fit: cover;
+        }
+        h1 { font-size: 32px; margin-bottom: 12px; }
+        .description { font-size: 16px; opacity: 0.8; max-width: 400px; margin: 0 auto 30px; }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+        }
+        .stat { text-align: center; }
+        .stat-value { 
+            font-size: 36px; 
+            font-weight: bold; 
+            background: linear-gradient(135deg, #ff006e, #ff4d00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 14px; opacity: 0.7; }
+        .join-btn {
+            background: linear-gradient(135deg, #ff006e, #ff4d00);
+            color: white;
+            border: none;
+            padding: 18px 60px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 30px 0;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 10px 40px rgba(255,0,110,0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .join-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(255,0,110,0.5);
+        }
+        .members {
+            padding: 40px 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .members h3 { text-align: center; margin-bottom: 20px; opacity: 0.9; }
+        .member {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            margin-bottom: 12px;
+        }
+        .member-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        .member-info { flex: 1; }
+        .member-name { font-weight: 600; }
+        .member-role { font-size: 12px; opacity: 0.6; }
+        .owner-badge {
+            background: gold;
+            color: black;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .download-section {
+            background: rgba(0,0,0,0.3);
+            padding: 50px 20px;
+            text-align: center;
+        }
+        .download-section h3 { margin-bottom: 15px; }
+        .download-section p { opacity: 0.7; margin-bottom: 25px; }
+        .store-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .store-btn {
+            background: white;
+            color: black;
+            padding: 12px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.6;
+            font-size: 14px;
+        }
+        .footer a { color: #ff006e; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="team-logo">
+            ` + func() string {
+		if team.LogoURL != "" {
+			return `<img src="` + team.LogoURL + `" alt="` + team.Name + `">`
+		}
+		return "👥"
+	}() + `
+        </div>
+        <h1>` + team.Name + `</h1>
+        <p class="description">` + team.Description + `</p>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">` + fmt.Sprintf("%d", activeMembers) + `</div>
+                <div class="stat-label">الأعضاء</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">` + fmt.Sprintf("%d", totalConversions) + `</div>
+                <div class="stat-label">التحويلات</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">` + fmt.Sprintf("%d", totalClicks) + `</div>
+                <div class="stat-label">النقرات</div>
+            </div>
+        </div>
+        
+        <a href="afftok://join/` + code + `" class="join-btn">🚀 انضم للفريق الآن</a>
+    </div>
+    
+    <div class="members">
+        <h3>أعضاء الفريق</h3>
+        ` + func() string {
+		membersHTML := ""
+		for _, member := range team.Members {
+			if member.Status == "active" {
+				roleHTML := ""
+				if member.Role == "owner" {
+					roleHTML = `<span class="owner-badge">👑 القائد</span>`
+				}
+				membersHTML += `
+                <div class="member">
+                    <div class="member-avatar"></div>
+                    <div class="member-info">
+                        <div class="member-name">` + member.User.FullName + `</div>
+                        <div class="member-role">@` + member.User.Username + `</div>
+                    </div>
+                    ` + roleHTML + `
+                </div>`
+			}
+		}
+		return membersHTML
+	}() + `
+    </div>
+    
+    <div class="download-section">
+        <h3>📱 حمّل تطبيق AffTok</h3>
+        <p>انضم لآلاف المروجين واكسب من عروض الأفلييت</p>
+        <div class="store-buttons">
+            <a href="https://apps.apple.com/app/afftok" class="store-btn">
+                🍎 App Store
+            </a>
+            <a href="https://play.google.com/store/apps/details?id=com.afftok.app" class="store-btn">
+                ▶️ Google Play
+            </a>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>© 2025 AffTok - جميع الحقوق محفوظة</p>
+        <p><a href="https://afftokapp.com">afftokapp.com</a></p>
+    </div>
+    
+    <script>
+        // Try to open app, fallback to store
+        document.querySelector('.join-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            var appUrl = 'afftok://join/` + code + `';
+            var storeUrl = /iPhone|iPad|iPod/i.test(navigator.userAgent) 
+                ? 'https://apps.apple.com/app/afftok'
+                : 'https://play.google.com/store/apps/details?id=com.afftok.app';
+            
+            var start = Date.now();
+            window.location = appUrl;
+            
+            setTimeout(function() {
+                if (Date.now() - start < 2000) {
+                    window.location = storeUrl;
+                }
+            }, 1500);
+        });
+    </script>
+</body>
+</html>`
+
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.String(http.StatusOK, html)
 }
