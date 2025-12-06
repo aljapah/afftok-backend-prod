@@ -53,6 +53,16 @@ const sidebars = {
     },
     {
       type: 'category',
+      label: 'Features',
+      items: [
+        'features/README',
+        'features/ai-assistant',
+        'features/teams-contests',
+        'features/advertisers',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Webhooks',
       items: [
         'webhooks/README',

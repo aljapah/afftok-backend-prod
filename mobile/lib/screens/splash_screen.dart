@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import '../utils/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import 'role_selection_screen.dart';
+import 'signin_screen.dart';
 import 'home_feed_screen.dart';
 import 'advertiser/advertiser_dashboard_screen.dart';
 
@@ -63,13 +64,19 @@ class _SplashScreenState extends State<SplashScreen> {
     
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
-    // Wait for auth to initialize
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Wait for auth to fully initialize
+    await authProvider.init();
+    
+    // Wait a bit more to ensure token validation completed
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    if (!mounted) return;
     
     Widget destination;
     
+    // Check BOTH isLoggedIn AND hasUser - token might be invalid
     if (authProvider.isLoggedIn && authProvider.currentUser != null) {
-      // User is logged in - check role
+      // User is logged in and has valid session - check role
       final user = authProvider.currentUser!;
       if (user.isAdvertiser) {
         destination = const AdvertiserDashboardScreen();
@@ -77,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
         destination = const HomeFeedScreen();
       }
     } else {
-      // Not logged in - show role selection
+      // Not logged in OR session expired - show role selection
       destination = const RoleSelectionScreen();
     }
     

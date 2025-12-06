@@ -175,11 +175,19 @@ class _SavedScreenState extends State<SavedScreen> {
                                         topLeft: Radius.circular(12),
                                         topRight: Radius.circular(12),
                                       ),
-                                      image: DecorationImage(
-                                        image: NetworkImage(offer.imageUrl),
-                                        fit: BoxFit.cover,
-                                      ),
+                                      color: Colors.grey[800],
+                                      image: offer.imageUrl.isNotEmpty
+                                          ? DecorationImage(
+                                              image: NetworkImage(offer.imageUrl),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : null,
                                     ),
+                                    child: offer.imageUrl.isEmpty
+                                        ? const Center(
+                                            child: Icon(Icons.image, color: Colors.grey, size: 50),
+                                          )
+                                        : null,
                                   ),
                                   Positioned(
                                     top: 8,

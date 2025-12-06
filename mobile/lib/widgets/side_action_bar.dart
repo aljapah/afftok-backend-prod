@@ -1,156 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import '../models/offer.dart';
 import '../utils/app_localizations.dart';
-import '../services/favorites_manager.dart';
 
-class SideActionBar extends StatefulWidget {
+class SideActionBar extends StatelessWidget {
   final Offer offer;
-  final VoidCallback? onFavoriteChanged;
+  final VoidCallback? onFilterTap;
+  final Set<String>? selectedCategories;
 
   const SideActionBar({
     Key? key,
     required this.offer,
-    this.onFavoriteChanged,
+    this.onFilterTap,
+    this.selectedCategories,
   }) : super(key: key);
-
-  @override
-  State<SideActionBar> createState() => _SideActionBarState();
-}
-
-class _SideActionBarState extends State<SideActionBar> with SingleTickerProviderStateMixin {
-  bool _isSaved = false;
-  late AnimationController _animController;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _checkIfSaved();
-  }
-
-  Future<void> _checkIfSaved() async {
-    try {
-      final favManager = await FavoritesManager.getInstance();
-      final isSaved = await favManager.isOfferSaved(widget.offer.id);
-      if (mounted) {
-        setState(() {
-          _isSaved = isSaved;
-        });
-      }
-    } catch (e) {
-      print('Error checking if saved: $e');
-    }
-  }
-
-  Future<void> _toggleFavorite() async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final favManager = await FavoritesManager.getInstance();
-      
-      if (_isSaved) {
-        // حذف من المفضلة
-        final success = await favManager.removeOffer(widget.offer.id);
-        if (success && mounted) {
-          setState(() {
-            _isSaved = false;
-            _isLoading = false;
-          });
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.removedFromFavorites ?? 'تم الحذف من المفضلة',
-                style: const TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.black87,
-              duration: const Duration(seconds: 1),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          
-          // استدعاء callback
-          if (widget.onFavoriteChanged != null) {
-            widget.onFavoriteChanged!();
-          }
-        }
-      } else {
-        // إضافة للمفضلة
-        final success = await favManager.saveOffer(widget.offer);
-        if (success && mounted) {
-          setState(() {
-            _isSaved = true;
-            _isLoading = false;
-          });
-          
-          _animController.forward().then((_) => _animController.reverse());
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.addedToFavorites ?? 'تم الحفظ في المفضلة ❤️',
-                style: const TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Colors.black87,
-              duration: const Duration(seconds: 1),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      print('Error toggling favorite: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final lang = AppLocalizations.of(context)!;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final hasActiveFilter = selectedCategories != null && selectedCategories!.isNotEmpty;
     
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Save button
+        // Categories filter button
         _ActionButton(
-          icon: _isSaved ? Icons.favorite : Icons.favorite_border,
-          label: _isSaved ? lang.saved : lang.save ?? 'حفظ',
-          onTap: _toggleFavorite,
-          color: _isSaved ? Colors.red : Colors.white,
-          isLoading: _isLoading,
-        ),
-
-        const SizedBox(height: 24),
-
-        // Share button
-        _ActionButton(
-          icon: Icons.share,
-          label: lang.share,
-          onTap: () {
-            Share.share(
-              '${lang.checkOut} ${widget.offer.companyName}! ${widget.offer.reward}\n${widget.offer.offerUrl}',
-              subject: widget.offer.companyName,
-            );
-          },
+          icon: Icons.category,
+          label: isArabic ? 'التصنيفات' : 'Categories',
+          onTap: onFilterTap ?? () {},
+          hasNotification: hasActiveFilter,
         ),
 
         const SizedBox(height: 24),
@@ -160,15 +38,14 @@ class _SideActionBarState extends State<SideActionBar> with SingleTickerProvider
           icon: Icons.info_outline,
           label: lang.info,
           onTap: () {
-            _showInfoBottomSheet(context);
+            _showInfoBottomSheet(context, lang);
           },
         ),
       ],
     );
   }
 
-  void _showInfoBottomSheet(BuildContext context) {
-    final lang = AppLocalizations.of(context)!;
+  void _showInfoBottomSheet(BuildContext context, AppLocalizations lang) {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1a1a1a),
@@ -190,16 +67,34 @@ class _SideActionBarState extends State<SideActionBar> with SingleTickerProvider
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Center(
-                    child: Text(
-                      widget.offer.companyName[0],
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
+                  child: offer.logoUrl.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            offer.logoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Center(
+                              child: Text(
+                                offer.companyName.isNotEmpty ? offer.companyName[0] : '?',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            offer.companyName.isNotEmpty ? offer.companyName[0] : '?',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -207,19 +102,31 @@ class _SideActionBarState extends State<SideActionBar> with SingleTickerProvider
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.offer.companyName,
+                        offer.companyName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        widget.offer.category,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontSize: 14,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF006E).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              offer.category,
+                              style: const TextStyle(
+                                color: Color(0xFFFF006E),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -237,7 +144,7 @@ class _SideActionBarState extends State<SideActionBar> with SingleTickerProvider
             ),
             const SizedBox(height: 12),
             Text(
-              widget.offer.description,
+              offer.description,
               style: TextStyle(
                 color: Colors.white.withOpacity(0.8),
                 fontSize: 14,
@@ -275,7 +182,7 @@ class _SideActionBarState extends State<SideActionBar> with SingleTickerProvider
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          widget.offer.reward,
+                          offer.reward,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -302,6 +209,7 @@ class _ActionButton extends StatelessWidget {
   final VoidCallback onTap;
   final Color color;
   final bool isLoading;
+  final bool hasNotification;
 
   const _ActionButton({
     Key? key,
@@ -310,6 +218,7 @@ class _ActionButton extends StatelessWidget {
     required this.onTap,
     this.color = Colors.white,
     this.isLoading = false,
+    this.hasNotification = false,
   }) : super(key: key);
 
   @override
@@ -318,30 +227,48 @@ class _ActionButton extends StatelessWidget {
       onTap: isLoading ? null : onTap,
       child: Column(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Icon(
-                    icon,
-                    color: color,
-                    size: 28,
+          Stack(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
                   ),
+                ),
+                child: isLoading
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Icon(
+                        icon,
+                        color: color,
+                        size: 28,
+                      ),
+              ),
+              if (hasNotification)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF006E),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 2),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -363,4 +290,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-

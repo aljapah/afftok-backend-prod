@@ -11,7 +11,6 @@ import Offers from "./pages/Offers";
 import Networks from "./pages/Networks";
 import Teams from "./pages/Teams";
 import Badges from "./pages/Badges";
-import Contests from "./pages/Contests";
 import UserDetails from "./pages/UserDetails";
 import Analytics from "./pages/Analytics";
 // Phase 10: New Admin Pages
@@ -21,6 +20,8 @@ import GeoRules from "./pages/GeoRules";
 import FraudDetection from "./pages/FraudDetection";
 import LogsViewer from "./pages/LogsViewer";
 import Webhooks from "./pages/Webhooks";
+import Invoices from "./pages/Invoices";
+import Contests from "./pages/Contests";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -33,7 +34,6 @@ function Router() {
       <Route path={"/networks"} component={Networks} />
       <Route path={"/teams"} component={Teams} />
       <Route path={"/badges"} component={Badges} />
-      <Route path={"/contests"} component={Contests} />
       <Route path={"/analytics"} component={Analytics} />
       {/* Phase 10: System Pages */}
       <Route path={"/monitoring"} component={Monitoring} />
@@ -42,6 +42,8 @@ function Router() {
       <Route path={"/fraud"} component={FraudDetection} />
       <Route path={"/logs"} component={LogsViewer} />
       <Route path={"/webhooks"} component={Webhooks} />
+      <Route path={"/invoices"} component={Invoices} />
+      <Route path={"/contests"} component={Contests} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

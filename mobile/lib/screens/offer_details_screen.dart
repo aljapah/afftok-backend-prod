@@ -72,13 +72,15 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
 
   void _shareOffer() {
     final offer = _latestOfferData ?? widget.offer;
+    // Use tracking URL for sharing so clicks are tracked
     Share.share(
-      'Check out this amazing offer from ${offer.companyName}! 🎁\n${widget.userOffer.userReferralLink}',
+      'Check out this amazing offer from ${offer.companyName}! 🎁\n${widget.userOffer.shareableLink}',
       subject: 'Amazing offer on AffTok',
     );
   }
 
   Future<void> _openOfferUrl() async {
+    // Open the company's direct link (affiliate link) when promoter opens it
     final Uri uri = Uri.parse(widget.userOffer.userReferralLink);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch ${widget.userOffer.userReferralLink}');
@@ -381,7 +383,7 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      widget.userOffer.userReferralLink,
+                                      widget.userOffer.shareableLink,
                                       style: TextStyle(
                                         color: Colors.grey[400],
                                         fontSize: 14,
@@ -394,7 +396,7 @@ class _OfferDetailsScreenState extends State<OfferDetailsScreen> {
                                     icon: const Icon(Icons.copy, color: Colors.white),
                                     onPressed: () => _copyLink(
                                       context,
-                                      widget.userOffer.userReferralLink,
+                                      widget.userOffer.shareableLink,
                                     ),
                                   ),
                                 ],

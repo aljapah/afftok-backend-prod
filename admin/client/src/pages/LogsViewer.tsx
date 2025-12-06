@@ -24,6 +24,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 // Mock logs data
 const mockLogs = [

@@ -9,11 +9,19 @@ This documentation portal covers all aspects of integrating with AffTok:
 - **Quick Start** - Get up and running in minutes
 - **API Reference** - Complete REST API documentation
 - **SDK Documentation** - Android, iOS, Flutter, React Native, Web
+- **Features** - AI Assistant, Teams & Contests, Advertisers Portal
 - **Webhooks** - Real-time event notifications
 - **Security** - Best practices and security guidelines
 - **Integration Guides** - Step-by-step integration tutorials
 - **Testing & QA** - Testing tools and procedures
 - **Operations** - Operational guidelines and best practices
+
+## New in v2.0 (December 2024)
+
+- 🤖 **AI Assistant** - Intelligent guided assistant for promoters
+- 👥 **Teams & Contests** - Social features and gamification
+- 🏢 **Advertisers Portal** - Two-sided marketplace support
+- 📱 **Enhanced Mobile App** - Beautiful UI with RTL support
 
 ## Documentation Structure
 
@@ -45,6 +53,11 @@ docs/
 │   ├── flutter.md              # Flutter SDK
 │   ├── react-native.md         # React Native SDK
 │   └── web.md                  # Web SDK
+├── features/                   # NEW
+│   ├── README.md               # Features overview
+│   ├── ai-assistant.md         # AI Assistant documentation
+│   ├── teams-contests.md       # Teams & Contests
+│   └── advertisers.md          # Advertisers Portal
 ├── webhooks/
 │   └── README.md               # Webhook documentation
 ├── security/

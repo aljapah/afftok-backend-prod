@@ -280,11 +280,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                         borderRadius: const BorderRadius.vertical(
                                           top: Radius.circular(12),
                                         ),
-                                        image: DecorationImage(
-                                          image: NetworkImage(offer.imageUrl),
-                                          fit: BoxFit.cover,
-                                        ),
+                                        color: Colors.grey[800],
+                                        image: offer.imageUrl.isNotEmpty
+                                            ? DecorationImage(
+                                                image: NetworkImage(offer.imageUrl),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : null,
                                       ),
+                                      child: offer.imageUrl.isEmpty
+                                          ? const Center(
+                                              child: Icon(Icons.image, color: Colors.grey, size: 50),
+                                            )
+                                          : null,
                                     ),
                                     Container(
                                       decoration: BoxDecoration(
@@ -318,23 +326,36 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                           ],
                                         ),
                                         padding: const EdgeInsets.all(6),
-                                        child: Image.network(
-                                          offer.logoUrl,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Center(
-                                              child: Text(
-                                                offer.companyName.isNotEmpty
-                                                    ? offer.companyName[0]
-                                                    : '?',
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.black87,
+                                        child: offer.logoUrl.isNotEmpty
+                                            ? Image.network(
+                                                offer.logoUrl,
+                                                errorBuilder: (context, error, stackTrace) {
+                                                  return Center(
+                                                    child: Text(
+                                                      offer.companyName.isNotEmpty
+                                                          ? offer.companyName[0]
+                                                          : '?',
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              )
+                                            : Center(
+                                                child: Text(
+                                                  offer.companyName.isNotEmpty
+                                                      ? offer.companyName[0]
+                                                      : '?',
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.black87,
+                                                  ),
                                                 ),
                                               ),
-                                            );
-                                          },
-                                        ),
                                       ),
                                     ),
                                     Positioned(

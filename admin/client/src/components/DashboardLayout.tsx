@@ -37,6 +37,7 @@ import {
   Shield,
   FileText,
   Webhook,
+  Receipt,
   Trophy
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
@@ -51,8 +52,9 @@ const menuItems = [
   { icon: Tag, label: "Offers", path: "/offers" },
   { icon: Network, label: "Networks", path: "/networks" },
   { icon: UsersRound, label: "Teams", path: "/teams" },
-  { icon: Trophy, label: "المسابقات | Contests", path: "/contests" },
+  { icon: Trophy, label: "Contests", path: "/contests" },
   { icon: Award, label: "Badges", path: "/badges" },
+  { icon: Receipt, label: "Invoices", path: "/invoices" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
 ];
 

@@ -96,19 +96,19 @@ const config = {
             ],
           },
           {
-            title: 'Community',
+            title: 'Features',
             items: [
-              { label: 'GitHub', href: 'https://github.com/afftok' },
-              { label: 'Discord', href: 'https://discord.gg/afftok' },
-              { label: 'Twitter', href: 'https://twitter.com/afftok' },
+              { label: 'AI Assistant', to: '/docs/features/ai-assistant' },
+              { label: 'Teams & Contests', to: '/docs/features/teams-contests' },
+              { label: 'Advertisers', to: '/docs/features/advertisers' },
             ],
           },
           {
-            title: 'Company',
+            title: 'Community',
             items: [
-              { label: 'About', href: 'https://afftok.com/about' },
-              { label: 'Blog', href: 'https://afftok.com/blog' },
-              { label: 'Contact', href: 'https://afftok.com/contact' },
+              { label: 'Website', href: 'https://afftokapp.com' },
+              { label: 'Twitter', href: 'https://twitter.com/afftokapp' },
+              { label: 'Instagram', href: 'https://instagram.com/afftokapp' },
             ],
           },
         ],

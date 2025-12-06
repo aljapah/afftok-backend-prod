@@ -16,19 +16,25 @@ class AuthService {
     );
   }
 
-  Future<Map<String, dynamic>> register(String username, String fullName, String email, String password) async {
+  Future<Map<String, dynamic>> register(String username, String fullName, String email, String password, {String? country}) async {
     try {
+      final Map<String, String> body = {
+        'username': username,
+        'full_name': fullName,
+        'email': email,
+        'password': password,
+      };
+      
+      if (country != null && country.isNotEmpty) {
+        body['country'] = country;
+      }
+      
       final response = await http.post(
         Uri.parse('$_baseUrl/register'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(<String, String>{
-          'username': username,
-          'full_name': fullName,
-          'email': email,
-          'password': password,
-        }),
+        body: jsonEncode(body),
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 201) {

@@ -1,14 +1,23 @@
 # Introduction to AffTok
 
-AffTok is an enterprise-grade affiliate tracking platform designed for high-performance, real-time tracking of clicks, conversions, and affiliate attribution.
+AffTok is an enterprise-grade affiliate tracking platform designed for high-performance, real-time tracking of clicks, conversions, and affiliate attribution. It operates as a **Two-Sided Marketplace** connecting promoters with advertisers.
 
 ## What is AffTok?
 
 AffTok provides a complete tracking infrastructure for:
 
-- **Advertisers** - Track campaign performance, manage offers, and process conversions
-- **Publishers/Affiliates** - Generate tracking links, monitor clicks, and earn commissions
-- **Networks** - Manage multiple advertisers and publishers with multi-tenant isolation
+- **Promoters (مروّجين)** - Market offers, track performance, earn points, compete in leaderboards
+- **Advertisers (معلنين)** - Create offers, manage campaigns, track promoter performance
+- **Admins** - Full platform management, approval workflows, analytics
+
+## Business Model
+
+AffTok is **100% free** for both promoters and advertisers:
+- No subscription fees
+- No transaction fees
+- Platform focuses on **tracking only**
+- Companies pay promoters directly
+- AffTok earns commission from companies
 
 ## Key Features
 
@@ -34,6 +43,29 @@ AffTok provides a complete tracking infrastructure for:
 - Offer-level and user-level metrics
 - Fraud detection insights
 
+### 🤖 AI Assistant (NEW)
+
+- Personal statistics dashboard
+- Smart offer suggestions
+- Performance analysis with recommendations
+- Success tips and strategies
+- Points & levels gamification
+- BYOK (Bring Your Own Key) for advanced chat
+
+### 👥 Teams & Contests (NEW)
+
+- Create and join teams
+- Global leaderboard rankings
+- Competitive contests with prizes
+- Team-based challenges
+
+### 🏢 Advertisers Portal (NEW)
+
+- Advertiser registration and onboarding
+- Offer creation with approval workflow
+- Performance analytics
+- Promoter management
+
 ### 🔄 Flexible Integrations
 
 - Native SDKs (Android, iOS, Flutter, React Native, Web)
@@ -49,14 +81,15 @@ AffTok provides a complete tracking infrastructure for:
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   Edge CDN   │  │   Backend    │  │   Admin      │          │
-│  │   Routing    │──│   API        │──│   Panel      │          │
+│  │   Mobile     │  │   Backend    │  │   Admin      │          │
+│  │   App        │──│   (Go)       │──│   Panel      │          │
+│  │  (Flutter)   │  │              │  │   (React)    │          │
 │  └──────────────┘  └──────────────┘  └──────────────┘          │
 │         │                 │                 │                   │
 │         ▼                 ▼                 ▼                   │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   Click      │  │   Redis      │  │   PostgreSQL │          │
-│  │   Processor  │──│   Cache      │──│   Database   │          │
+│  │   AI         │  │   Redis      │  │   PostgreSQL │          │
+│  │   Assistant  │──│   Cache      │──│   Database   │          │
 │  └──────────────┘  └──────────────┘  └──────────────┘          │
 │         │                 │                 │                   │
 │         ▼                 ▼                 ▼                   │
@@ -68,19 +101,44 @@ AffTok provides a complete tracking infrastructure for:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## User Roles
+
+| Role | Description | Access |
+|------|-------------|--------|
+| Promoter | Markets offers using tracking links | Mobile App |
+| Advertiser | Creates and manages offers | Mobile App |
+| Admin | Platform administrator | Admin Panel |
+
+## Mobile App Features
+
+### For Promoters
+- Browse and join offers
+- Get unique tracking links
+- View personal statistics
+- AI Assistant for guidance
+- Join teams and contests
+- Track points and levels
+- Global leaderboard
+
+### For Advertisers
+- Create company account
+- Submit offers for approval
+- Track offer performance
+- View promoter statistics
+
 ## Use Cases
 
 ### Affiliate Marketing
 
-Track affiliate referrals, attribute conversions, and calculate commissions automatically.
+Track affiliate referrals, attribute conversions, and monitor performance in real-time.
 
-### Mobile App Install Tracking
+### Influencer Marketing
 
-Use native SDKs to track app installs and in-app events with device fingerprinting.
+Provide influencers with unique tracking links to measure their campaign effectiveness.
 
-### E-commerce Conversion Tracking
+### E-commerce Promotion
 
-Integrate with your checkout flow to track purchases and revenue.
+Partner with promoters to drive traffic and sales to your online store.
 
 ### Lead Generation
 
@@ -88,17 +146,31 @@ Track form submissions, sign-ups, and qualified leads across campaigns.
 
 ## Getting Started
 
-1. **Create an Account** - Sign up at [dashboard.afftok.com](https://dashboard.afftok.com)
-2. **Generate API Key** - Navigate to Settings → API Keys
-3. **Create an Offer** - Set up your first tracking offer
-4. **Integrate** - Use our SDKs or API to start tracking
+### For Promoters
+1. **Download the App** - Available on iOS and Android
+2. **Create Account** - Sign up as a promoter
+3. **Browse Offers** - Find offers that match your audience
+4. **Share Links** - Get your unique tracking link
+5. **Track Performance** - Monitor clicks and conversions
+
+### For Advertisers
+1. **Download the App** - Available on iOS and Android
+2. **Register Company** - Provide company details
+3. **Create Offers** - Submit offers for approval
+4. **Track Results** - Monitor promoter performance
+
+### For Developers
+1. **Get API Key** - Generate from Admin Panel
+2. **Read Documentation** - Explore API reference
+3. **Integrate SDKs** - Use native SDKs for tracking
+4. **Test & Deploy** - Use sandbox for testing
 
 ## API Base URLs
 
 | Environment | Base URL |
 |-------------|----------|
-| Production | `https://api.afftok.com` |
-| Sandbox | `https://sandbox.api.afftok.com` |
+| Production | `https://afftok-backend-prod-production.up.railway.app/api` |
+| Website | `https://afftokapp.com` |
 
 ## SDK Support
 
@@ -113,14 +185,20 @@ Track form submissions, sign-ups, and qualified leads across campaigns.
 ## Next Steps
 
 - [Architecture Overview](architecture.md) - Understand how AffTok works
-- [Quick Start Guide](../quick-start/getting-started.md) - Get up and running in 5 minutes
+- [Quick Start Guide](../quick-start/getting-started.md) - Get up and running
 - [API Reference](../api-reference/authentication.md) - Explore the full API
+- [AI Assistant](../docs/features/ai-assistant.md) - Learn about the AI features
+- [Teams & Contests](../docs/features/teams-contests.md) - Explore social features
 
 ## Support
 
 Need help? Contact us:
 
-- **Email**: support@afftok.com
-- **Documentation**: https://docs.afftok.com
-- **Status Page**: https://status.afftok.com
+- **Email**: support@afftokapp.com
+- **Website**: [afftokapp.com](https://afftokapp.com)
+- **Twitter**: [@afftokapp](https://twitter.com/afftokapp)
+- **Instagram**: [@afftokapp](https://instagram.com/afftokapp)
 
+---
+
+*Last updated: December 2024*

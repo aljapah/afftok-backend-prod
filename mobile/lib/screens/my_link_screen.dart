@@ -48,7 +48,7 @@ class MyLinkScreen extends StatelessWidget {
           );
         }
         
-        final personalLink = 'afftok.com/u/${user.username}';
+        final personalLink = 'afftokapp.com/p/${user.id}';
         final fullLink = 'https://$personalLink';
 
         return Scaffold(

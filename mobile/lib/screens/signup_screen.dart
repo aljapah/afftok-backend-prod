@@ -22,6 +22,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
+  String? _selectedCountry;
+
+  // Countries with flags
+  static const List<Map<String, String>> countries = [
+    {'code': 'SA', 'name': 'السعودية', 'nameEn': 'Saudi Arabia', 'flag': '🇸🇦'},
+    {'code': 'KW', 'name': 'الكويت', 'nameEn': 'Kuwait', 'flag': '🇰🇼'},
+    {'code': 'AE', 'name': 'الإمارات', 'nameEn': 'UAE', 'flag': '🇦🇪'},
+    {'code': 'BH', 'name': 'البحرين', 'nameEn': 'Bahrain', 'flag': '🇧🇭'},
+    {'code': 'QA', 'name': 'قطر', 'nameEn': 'Qatar', 'flag': '🇶🇦'},
+    {'code': 'OM', 'name': 'عمان', 'nameEn': 'Oman', 'flag': '🇴🇲'},
+    {'code': 'EG', 'name': 'مصر', 'nameEn': 'Egypt', 'flag': '🇪🇬'},
+    {'code': 'JO', 'name': 'الأردن', 'nameEn': 'Jordan', 'flag': '🇯🇴'},
+    {'code': 'LB', 'name': 'لبنان', 'nameEn': 'Lebanon', 'flag': '🇱🇧'},
+    {'code': 'IQ', 'name': 'العراق', 'nameEn': 'Iraq', 'flag': '🇮🇶'},
+    {'code': 'SY', 'name': 'سوريا', 'nameEn': 'Syria', 'flag': '🇸🇾'},
+    {'code': 'PS', 'name': 'فلسطين', 'nameEn': 'Palestine', 'flag': '🇵🇸'},
+    {'code': 'YE', 'name': 'اليمن', 'nameEn': 'Yemen', 'flag': '🇾🇪'},
+    {'code': 'LY', 'name': 'ليبيا', 'nameEn': 'Libya', 'flag': '🇱🇾'},
+    {'code': 'TN', 'name': 'تونس', 'nameEn': 'Tunisia', 'flag': '🇹🇳'},
+    {'code': 'DZ', 'name': 'الجزائر', 'nameEn': 'Algeria', 'flag': '🇩🇿'},
+    {'code': 'MA', 'name': 'المغرب', 'nameEn': 'Morocco', 'flag': '🇲🇦'},
+    {'code': 'SD', 'name': 'السودان', 'nameEn': 'Sudan', 'flag': '🇸🇩'},
+    {'code': 'US', 'name': 'أمريكا', 'nameEn': 'USA', 'flag': '🇺🇸'},
+    {'code': 'GB', 'name': 'بريطانيا', 'nameEn': 'UK', 'flag': '🇬🇧'},
+    {'code': 'FR', 'name': 'فرنسا', 'nameEn': 'France', 'flag': '🇫🇷'},
+    {'code': 'DE', 'name': 'ألمانيا', 'nameEn': 'Germany', 'flag': '🇩🇪'},
+    {'code': 'TR', 'name': 'تركيا', 'nameEn': 'Turkey', 'flag': '🇹🇷'},
+    {'code': 'PK', 'name': 'باكستان', 'nameEn': 'Pakistan', 'flag': '🇵🇰'},
+    {'code': 'IN', 'name': 'الهند', 'nameEn': 'India', 'flag': '🇮🇳'},
+    {'code': 'OTHER', 'name': 'أخرى', 'nameEn': 'Other', 'flag': '🌍'},
+  ];
 
   @override
   void dispose() {
@@ -68,6 +99,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _nameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text.trim(),
+          country: _selectedCountry,
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -228,6 +260,63 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                   if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                     return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // Country Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedCountry,
+                decoration: InputDecoration(
+                  labelText: Localizations.localeOf(context).languageCode == 'ar' ? 'البلد' : 'Country',
+                  labelStyle: const TextStyle(color: Colors.white60),
+                  prefixIcon: Text(
+                    _selectedCountry != null 
+                        ? countries.firstWhere((c) => c['code'] == _selectedCountry, orElse: () => {'flag': '🌍'})['flag'] ?? '🌍'
+                        : '🌍',
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.white30),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Color(0xFFFF006E), width: 2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1A1A1A),
+                style: const TextStyle(color: Colors.white),
+                icon: const Icon(Icons.arrow_drop_down, color: Colors.white60),
+                items: countries.map((country) {
+                  final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+                  return DropdownMenuItem<String>(
+                    value: country['code'],
+                    child: Row(
+                      children: [
+                        Text(country['flag']!, style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 12),
+                        Text(
+                          isArabic ? country['name']! : country['nameEn']!,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCountry = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return Localizations.localeOf(context).languageCode == 'ar' 
+                        ? 'الرجاء اختيار البلد' 
+                        : 'Please select your country';
                   }
                   return null;
                 },

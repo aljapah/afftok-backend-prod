@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
 import 'advertiser_dashboard_screen.dart';
 
@@ -26,6 +27,28 @@ class _AdvertiserRegisterScreenState extends State<AdvertiserRegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLogin = true; // Start with login screen first
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUsername = prefs.getString('advertiser_saved_username');
+    final savedPassword = prefs.getString('advertiser_saved_password');
+    final rememberMe = prefs.getBool('advertiser_remember_me') ?? false;
+
+    if (rememberMe && savedUsername != null && savedPassword != null) {
+      setState(() {
+        _usernameController.text = savedUsername;
+        _passwordController.text = savedPassword;
+        _rememberMe = true;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -70,6 +93,18 @@ class _AdvertiserRegisterScreenState extends State<AdvertiserRegisterScreen> {
     setState(() => _isLoading = false);
 
     if (success && mounted) {
+      // Save credentials if remember me is checked
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe && _isLogin) {
+        await prefs.setString('advertiser_saved_username', _usernameController.text.trim());
+        await prefs.setString('advertiser_saved_password', _passwordController.text);
+        await prefs.setBool('advertiser_remember_me', true);
+      } else {
+        await prefs.remove('advertiser_saved_username');
+        await prefs.remove('advertiser_saved_password');
+        await prefs.setBool('advertiser_remember_me', false);
+      }
+      
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const AdvertiserDashboardScreen()),
@@ -325,7 +360,32 @@ class _AdvertiserRegisterScreenState extends State<AdvertiserRegisterScreen> {
                     ),
                   ],
                   
-                  const SizedBox(height: 32),
+                  // Remember Me (only for login)
+                  if (_isLogin) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (value) {
+                            setState(() => _rememberMe = value ?? false);
+                          },
+                          activeColor: const Color(0xFF6C63FF),
+                          checkColor: Colors.white,
+                          side: BorderSide(color: Colors.white.withOpacity(0.5)),
+                        ),
+                        Text(
+                          isArabic ? 'تذكرني' : 'Remember me',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  
+                  const SizedBox(height: 24),
                   
                   // Submit Button
                   SizedBox(
